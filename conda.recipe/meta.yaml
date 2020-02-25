@@ -1,0 +1,31 @@
+package:
+  name: fishlifeexoncapture
+  version: 0.1
+
+source:
+  path: ../
+
+requirements:
+  run:
+    - ca-certificates ==2019.11.28
+    - certifi ==2019.11.28
+    - libcxx ==9.0.1
+    - libffi ==3.2.1
+    - ncurses ==6.1
+    - openjdk ==11.0.1
+    - openssl ==1.1.1d
+    - pip ==20.0.2
+    - readline ==8.0
+    - setuptools ==45.2.0
+    - sqlite ==3.30.1
+    - tk ==8.6.10
+    - trimmomatic ==0.39
+    - wheel ==0.34.2
+    - xz ==5.2.4
+    - zlib ==1.2.11
+  host:
+    - python ==3.8.1
+    
+test:
+  commands:
+    - iterateTrimmomaticPE -h
