@@ -1,12 +1,14 @@
 import re
-
-from fishlifeexoncapture.utils import runShell
+import os
+from fishlifeexoncapture.utils import runShell, addpath
 
 class Trimmomatic:
     def __init__(self,
-                adapters = None,
-                files = None,
-                threads = None,
+                adapters   = None,
+                corenames  = None,
+                extentions = None,
+                path       = None,
+                threads      = None,
                 illuminaclip = None,
                 leading  = None,
                 trailing = None,
@@ -17,7 +19,7 @@ class Trimmomatic:
          PE
          -threads 4
          -phred33
-         -trimlog $directory.trimlog
+         -trimlog $directory.trimlog ## SET IT WHEN FIND AN ID
           $fastq 
           ${fastq%_*.*.*}_R2.fastq.gz
           ${fastq%_*.*.*}_R1.trimmed.fastq.gz
@@ -30,19 +32,37 @@ class Trimmomatic:
           SLIDINGWINDOW:4:15
           MINLEN:31 > ../$directory.step1.trimming.txt 2>&1;
         """
-        self.firstcall = ["trimmomatic", "PE", "-phread33"]
-        self.leading   = ["LEADING:%s" % leading ]
-        self.trailing  = ["TRAILING:%s" % trailing]
-        self.sliding   = ["SLIDINGWINDOW:%s" % ":".join(sliding)]
-        
-        
+        self.path       = path
+        self.corenames  = corenames
+        self.extentions = extentions
 
+        self.firstcall = ["trimmomatic", "PE", "-threads", str(threads), "-phred33", "-quiet"]
+        self.thirdcall = ["ILLUMINACLIP:%s:%s" % (adapters, ":".join([str(i) for i in illuminaclip])),
+                          "LEADING:%s"  % leading,
+                          "TRAILING:%s" % trailing,
+                          "SLIDINGWINDOW:%s" % ":".join([str(i) for i in sliding]),
+                          "MINLEN:%s"   % minlen]
 
-    def setopts(self):
-        pass
-        
+    @property
+    def listofopts(self):
+        fpat, rpat   = self.extentions
+
+        poextentions = [fpat, 
+                        rpat,
+                        "_paired"   + fpat,
+                        "_unpaired" + fpat,
+                        "_paired"   + rpat,
+                        "_unpaired" + rpat ]
+        out = []
+        for c in self.corenames:
+            secondcall = addpath(self.path, c, poextentions)
+            out       += [self.firstcall + secondcall + self.thirdcall]
+
+        return out
+
     def run(self):
-        pass
+        for opt in self.listofopts:
+            runShell(args = opt)
 
 class aTRAM:
     def __init__(self):

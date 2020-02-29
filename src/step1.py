@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import argparse
 import os
+import argparse
 
 from fishlifeexoncapture.fileHandler import SetEnvironment
-from fishlifeexoncapture.wrappers import Trimmomatic
+from fishlifeexoncapture.wrappers    import Trimmomatic
 
 
 def cUsage():
@@ -22,7 +22,7 @@ general options:
   -a , --adapters     Path where adapters are [Default = TrueSeq3-PE.fa]
   -f , --forward      Grouping pattern of forward files [Default = "_R1.fastq.gz"]
   -r , --reverse      Grouping pattern of reverse files [Default = "_R2.fastq.gz"]
-  -n , --ncpus        number of cpus [Default = 4]
+  -n , --ncpu         number of cpus [Default = 1]
 
 trimmomatic options:
   -l , --leading     Leading [Default = 5]
@@ -61,10 +61,10 @@ def getOpts():
                         type    = str,
                         default = "_R2.fastq.gz",
                         help    = '[Optional] Grouping pattern of reverse files [Default = "_R2.fastq.gz"]')
-    parser.add_argument('-n', '--ncpus',
+    parser.add_argument('-n', '--ncpu',
                         metavar = "",
                         type    = int,
-                        default = 4,
+                        default = 1,
                         help    = '[Optional] number of cpus [Default = 4]')
     parser.add_argument('-i', '--illuminaclip',
                         metavar = "",
@@ -110,20 +110,23 @@ def main():
     fishfiles = SetEnvironment(args.adapters,
                                args.forward ,
                                args.reverse,
-                               args.path)
+                               args.path,
+                               args.ncpu)
 
     fishtrim  = Trimmomatic(fishfiles.adapterpath,
-                            fishfiles.gottenfiles,
+                            fishfiles.corenames,
+                            fishfiles.extentions,
+                            args.path,
                             args.ncpu,
                             args.illuminaclip,
                             args.leading,
                             args.trailing,
                             args.sliding, 
-                            args.minlen
-                            )
+                            args.minlen)
 
     fishfiles.mkdir()
+    fishfiles.mv()
     fishtrim.run()
-    
+
 if __name__ == "__main__":
     main()

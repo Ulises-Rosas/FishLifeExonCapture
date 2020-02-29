@@ -1,23 +1,26 @@
 import re
 import os
 import sys
-import uuid
-import subprocess
+import shutil
+from multiprocessing import Pool
+# import uuid
+# import subprocess
 import collections
 import fishlifeexoncapture
 
 class SetEnvironment:
 
     def __init__(self, 
-                 adapters    = None,
-                 forwardpath = None,
-                 reversepath = None,
-                 wpath       = None):
+                 adapters   = None,
+                 forwardpat = None,
+                 reversepat = None,
+                 wpath      = None,
+                 ncpu       = None):
 
         self.initadapt   = adapters
+        self.ncpu        = ncpu
 
-        self.forwardpath = forwardpath
-        self.reversepath = reversepath
+        self.extentions  = (forwardpat, reversepat)
         self.wpath       = wpath
         
     @property
@@ -30,13 +33,12 @@ class SetEnvironment:
             return self.initadapt
 
     @property
-    def gottenfiles(self):
+    def corenames(self):
 
-        path = self.wpath
-        fpat = self.forwardpath
-        rpat = self.reversepath
-
-        files = [ i for i in os.listdir(path) if os.path.isfile(i)]
+        path       = self.wpath
+        fpat, rpat = self.extentions
+        
+        files      = [ i for i in os.listdir(path) if os.path.isfile(i)]
 
         forward = [i.replace(fpat, "") for i in files if re.findall(fpat, i)]
         reverse = [i.replace(rpat, "") for i in files if re.findall(rpat, i)]
@@ -44,20 +46,39 @@ class SetEnvironment:
 
         if not pairs:
             sys.stdout.write("\n")
-            sys.stdout.write("No files matching forward and reverse pattern\n")
+            sys.stdout.write("Step 1: No files matching forward and reverse pattern\n")
             exit()
 
-        return [os.path.join(path, k) for k,v in pairs.items() if v == 2]
+        return [ k for k,v in pairs.items() if v == 2]
 
-    def mkdir(self, names = None):
+    def protomkdir(self, name = None):
+        tmp = os.path.join( self.wpath, name )
+        if not os.path.isdir(tmp):
+            os.mkdir(tmp)
 
-        names = self.gottenfiles if names is None else names
-        # uuid.uuid4().hex[:14].upper()
+    def mkdir(self):
+        with Pool(processes = self.ncpu) as p:
+            [ *p.map( self.protomkdir, self.corenames ) ]
+    
+    def protomv(self, name = None):
+        fpat, rpat = self.extentions
+        stem = os.path.join(self.wpath, name)
 
-        # out   = []
-        for d in names:
-            # tmp_dir = os.path.join(self.wpath, d)
-            os.mkdir(tmp_dir)
-            # out.append(tmp_dir)
-        
-        # return out
+        for e in fpat, rpat:
+            if not os.path.exists( os.path.join(stem, stem + e)):
+                shutil.move( stem + e, stem )
+
+    def mv(self):
+        with Pool(processes = self.ncpu) as p:
+            [ *p.map(self.protomv, self.corenames) ]
+    
+    def protocp(self, name = None):
+        fpat, rpat = self.extentions
+        stem = os.path.join(self.wpath, name)
+
+        for e in fpat, rpat:
+            shutil.copy( stem + e, stem )
+
+    def cp(self):
+        with Pool(processes = self.ncpu) as p:
+            [ *p.map(self.protocp, self.corenames) ]
