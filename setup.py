@@ -11,7 +11,7 @@ setup(
     package_data = {"fishlifeexoncapture"  : ["data/*"]},
     entry_points = {
         'console_scripts': [
-            'iterateTrimmomaticPE = fishlifeexoncapture.step1:main'
+            'trimmomatic-loop-PE = fishlifeexoncapture.step1:main'
         ]
     },
     classifiers = [
