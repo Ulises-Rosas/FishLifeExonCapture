@@ -2,11 +2,66 @@ import re
 import os
 import sys
 import shutil
-from multiprocessing import Pool
-# import uuid
-# import subprocess
+import pickle
 import collections
+from multiprocessing import Pool
+
 import fishlifeexoncapture
+
+class TollCheck:
+
+    def __init__(self, 
+                 path = None):
+
+        self.hiddenfile = os.path.join(path, ".ignoreFishLifeExonCapture")
+
+    def __save_obj__(self, obj = None, name = None):
+
+        if name is None:
+            name  = self.hiddenfile
+
+        with open( name , 'wb') as f:
+            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+    def __load_info__(self, name = None):
+
+        if name is None:
+            name = self.hiddenfile
+
+        with open( name, 'rb') as f:
+            return pickle.load(f)
+
+    def exists(self):
+
+        return True if os.path.exists(self.hiddenfile) else False
+
+    def pickleIt(self):
+
+        try:
+            return self.__load_info__(self.hiddenfile)
+
+        except FileNotFoundError:
+            return None
+
+    def creatmetadata(self, obj):
+
+        if not isinstance(obj, dict):
+            obj = {i:[] for i in obj}
+
+        if self.exists():
+            tmp = self.pickleIt()
+
+            for k,v in obj.items():
+                if not tmp.__contains__(k):
+                    tmp[k] = v
+
+            obj = tmp
+
+        self.__save_obj__(obj, self.hiddenfile)
+
+    def label(self, corename, step):
+        
+        pass
 
 class SetEnvironment:
 
@@ -35,9 +90,15 @@ class SetEnvironment:
     @property
     def corenames(self):
 
+        """
+        path = "."
+        out = ["a", "b", "c", "d"]
+        """
+
         path       = self.wpath
         fpat, rpat = self.extentions
-        
+
+        Toll       = TollCheck(path = path)
         files      = [ i for i in os.listdir(path) if os.path.isfile(i)]
 
         forward = [i.replace(fpat, "") for i in files if re.findall(fpat, i)]
@@ -45,11 +106,18 @@ class SetEnvironment:
         pairs   = collections.Counter(forward + reverse)
 
         if not pairs:
-            sys.stdout.write("\n")
-            sys.stdout.write("Step 1: No files matching forward and reverse pattern\n")
-            exit()
 
-        return [ k for k,v in pairs.items() if v == 2]
+            if Toll.exists():
+                return list(Toll.pickleIt().keys())
+
+            else:
+                sys.stdout.write("\n")
+                sys.stdout.write("Step 1: No files matching forward and reverse pattern\n")
+                exit()
+
+        out = [ k for k,v in pairs.items() if v == 2 ]
+        Toll.creatmetadata(out)
+        return out
 
     def protomkdir(self, name = None):
         tmp = os.path.join( self.wpath, name )
