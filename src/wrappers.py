@@ -60,13 +60,20 @@ class Trimmomatic:
         out = {}
         for c in self.corenames:
             secondcall = addpath(self.path, c, poextentions)
-            out[c]     = [self.firstcall + secondcall + self.thirdcall]
+            out[c]     = self.firstcall + secondcall + self.thirdcall
 
         return out
 
     def run(self):
-        for _,v in self.listofopts:
-            runShell(args = v)
+        tc = TollCheck(self.path, self.step)
+
+        for k,v in self.listofopts.items():
+
+            if not tc.checked(k):
+                # print(v)
+                runShell(args = v)
+                tc.label(k)
+
 
 class aTRAM:
     def __init__(self):

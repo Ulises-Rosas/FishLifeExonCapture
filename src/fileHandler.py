@@ -11,9 +11,12 @@ import fishlifeexoncapture
 class TollCheck:
 
     def __init__(self, 
-                 path = None):
+                 path = None,
+                 step = None):
 
         self.hiddenfile = os.path.join(path, ".ignoreFishLifeExonCapture")
+        self.step = step
+        
 
     def __save_obj__(self, obj = None, name = None):
 
@@ -35,6 +38,7 @@ class TollCheck:
 
         return True if os.path.exists(self.hiddenfile) else False
 
+    @property
     def pickleIt(self):
 
         try:
@@ -46,10 +50,10 @@ class TollCheck:
     def creatmetadata(self, obj):
 
         if not isinstance(obj, dict):
-            obj = {i:[] for i in obj}
+            obj = {i:{} for i in obj}
 
         if self.exists():
-            tmp = self.pickleIt()
+            tmp = self.pickleIt
 
             for k,v in obj.items():
                 if not tmp.__contains__(k):
@@ -59,9 +63,18 @@ class TollCheck:
 
         self.__save_obj__(obj, self.hiddenfile)
 
-    def label(self, corename, step):
-        
-        pass
+    def checked(self, corename):
+        df = self.pickleIt
+
+        return True if df[corename].__contains__(self.step) else False
+
+    def label(self, corename):
+        df = self.pickleIt
+
+        df[corename][self.step] = 1
+
+        self.__save_obj__(df, self.hiddenfile)
+
 
 class SetEnvironment:
 
@@ -108,7 +121,7 @@ class SetEnvironment:
         if not pairs:
 
             if Toll.exists():
-                return list(Toll.pickleIt().keys())
+                return list(Toll.pickleIt.keys())
 
             else:
                 sys.stdout.write("\n")
