@@ -13,7 +13,7 @@ setup(
                     "fishlifedat"          : ["ProbeSets/*"] },
     entry_points = {
         'console_scripts': [
-            'iterateTrimmomaticPE = fishlifeexoncapture.step1:main'
+            'trimmomatic-loop-PE = fishlifeexoncapture.step1:main'
         ]
     },
     classifiers = [

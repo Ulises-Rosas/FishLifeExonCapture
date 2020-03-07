@@ -1,5 +1,7 @@
 import re
 import os
+
+from fishlifeexoncapture.fileHandler import TollCheck
 from fishlifeexoncapture.utils import runShell, addpath
 
 class Trimmomatic:
@@ -32,6 +34,8 @@ class Trimmomatic:
           SLIDINGWINDOW:4:15
           MINLEN:31 > ../$directory.step1.trimming.txt 2>&1;
         """
+        self.step       = "step1"
+
         self.path       = path
         self.corenames  = corenames
         self.extentions = extentions
@@ -53,16 +57,23 @@ class Trimmomatic:
                         "_unpaired" + fpat,
                         "_paired"   + rpat,
                         "_unpaired" + rpat ]
-        out = []
+        out = {}
         for c in self.corenames:
             secondcall = addpath(self.path, c, poextentions)
-            out       += [self.firstcall + secondcall + self.thirdcall]
+            out[c]     = self.firstcall + secondcall + self.thirdcall
 
         return out
 
     def run(self):
-        for opt in self.listofopts:
-            runShell(args = opt)
+        tc = TollCheck(self.path, self.step)
+
+        for k,v in self.listofopts.items():
+
+            if not tc.checked(k):
+                # print(v)
+                runShell(args = v)
+                tc.label(k)
+
 
 class aTRAM:
     def __init__(self):
