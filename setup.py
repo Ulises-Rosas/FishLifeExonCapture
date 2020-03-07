@@ -4,11 +4,13 @@ import setuptools
 from distutils.core import setup
 
 setup(
-    name= "FishLifeExonCapture",
-    version= "0.1",
-    packages= ["fishlifeexoncapture"],
-    package_dir  = {"fishlifeexoncapture": "src"},
-    package_data = {"fishlifeexoncapture"  : ["data/*"]},
+    name = "FishLifeExonCapture",
+    version = "0.1",
+    packages = ["fishlifeexoncapture", "fishlifedat"],
+    package_dir  = {"fishlifeexoncapture" : "src",
+                    "fishlifedat"         : "."   },
+    package_data = {"fishlifeexoncapture"  : ["data/*"],
+                    "fishlifedat"          : ["ProbeSets/*"] },
     entry_points = {
         'console_scripts': [
             'iterateTrimmomaticPE = fishlifeexoncapture.step1:main'
