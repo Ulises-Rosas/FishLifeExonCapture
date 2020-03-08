@@ -3,23 +3,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - ca-certificates
-  - certifi
-  - libcxx
-  - libcxxabi
-  - libedit
-  - libffi
-  - ncurses
-  - openjdk
-  - openssl
-  - pip
-  - python
-  - readline
-  - setuptools
-  - sqlite
-  - tk
   - trimmomatic
-  - wheel
-  - xz
-  - zlib
+  - bwa
+  - samtools
 
