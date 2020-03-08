@@ -75,6 +75,25 @@ class Trimmomatic:
                 tc.label(k)
 
 
-class aTRAM:
+class samtools:
+    
     def __init__(self):
+        """
+        corname="Mormyridae_Marcusenius_sanagaensis_EPLATE_58_A05"
+        stem=$corname/$corname
+        ncpu=7
+        addn=$(echo -e "$ncpu - 1" | bc)
+
+        bwa mem all_Master.fasta $stem'_paired_R1.fastq' $stem'_paired_R2.fastq' |\
+             samtools view -bS -o $stem'.mapped.bam' --threads $addn -;
+        samtools sort $stem'.mapped.bam' --threads $addn > $stem'.mapped.sorted.bam';
+        samtools rmdup -S $stem'.mapped.sorted.bam' $stem'.mapped.sorted.rmdup.bam';
+        samtools index $stem'.mapped.sorted.rmdup.bam';
+        samtools bam2fq $stem'.mapped.sorted.rmdup.bam' > $stem'.rmdup.fastq';
+        
+        #spaghetti code
+        """
+
+
+
         pass
