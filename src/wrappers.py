@@ -93,7 +93,4 @@ class samtools:
         
         #spaghetti code
         """
-
-
-
         pass
