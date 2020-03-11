@@ -13,7 +13,9 @@ setup(
                     "fishlifedat"          : ["ProbeSets/*"] },
     entry_points = {
         'console_scripts': [
-            'trimmomatic-loop-PE = fishlifeexoncapture.step1:main'
+            'trimmomatic-loop-PE = fishlifeexoncapture.step1:main',
+            'map-exons           = fishlifeexoncapture.step2a:main',
+            'map-exons-otophysi  = fishlifeexoncapture.step2b:main'
         ]
     },
     classifiers = [
