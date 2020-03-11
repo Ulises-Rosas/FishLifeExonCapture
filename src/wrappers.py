@@ -74,10 +74,11 @@ class Trimmomatic:
                 runShell(args = v)
                 tc.label(k)
 
-
 class samtools:
     
-    def __init__(self):
+    def __init__(self,
+                 threads = None,
+                 step    = None):
         """
         corname="Mormyridae_Marcusenius_sanagaensis_EPLATE_58_A05"
         stem=$corname/$corname
@@ -93,4 +94,12 @@ class samtools:
         
         #spaghetti code
         """
-        pass
+        self.step = step
+
+        self.firstline  = "bwa mem {masterFasta} {stem}{fore} {stem}{reve} | samtools view -bS -o {stem}.mapped.bam --threads {addn} -"
+        self.secondline = "samtools sort {stem}.mapped.bam --threads {addn} > {stem}.mapped.sorted.bam"
+        self.thirdline  = "samtools rmdup -S {stem}.mapped.sorted.bam {stem}.mapped.sorted.rmdup.bam"
+        self.fourthline = "samtools index {stem}.mapped.sorted.rmdup.bam"
+        self.fifthline  = "samtools bam2fq {stem}.mapped.sorted.rmdup.bam > {stem}.rmdup.fastq"
+
+    

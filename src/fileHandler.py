@@ -12,11 +12,12 @@ class TollCheck:
 
     def __init__(self, 
                  path = None,
-                 step = None):
+                 step = None,
+                 extentions = None):
 
         self.hiddenfile = os.path.join(path, ".ignoreFishLifeExonCapture")
         self.step = step
-        
+        self.extentions = extentions
 
     def __save_obj__(self, obj = None, name = None):
 
@@ -50,7 +51,7 @@ class TollCheck:
     def creatmetadata(self, obj):
 
         if not isinstance(obj, dict):
-            obj = {i:{} for i in obj}
+            obj = { i: { "extentions": self.extentions} for i in obj}
 
         if self.exists():
             tmp = self.pickleIt
@@ -111,7 +112,7 @@ class SetEnvironment:
         path       = self.wpath
         fpat, rpat = self.extentions
 
-        Toll       = TollCheck(path = path)
+        Toll       = TollCheck(path = path, extentions = self.extentions)
         files      = [ i for i in os.listdir(path) if os.path.isfile(i)]
 
         forward = [i.replace(fpat, "") for i in files if re.findall(fpat, i)]
@@ -125,7 +126,7 @@ class SetEnvironment:
 
             else:
                 sys.stdout.write("\n")
-                sys.stdout.write("Step 1: No files matching forward and reverse pattern\n")
+                sys.stdout.write("No files matching forward and reverse pattern\n")
                 exit()
 
         out = [ k for k,v in pairs.items() if v == 2 ]
