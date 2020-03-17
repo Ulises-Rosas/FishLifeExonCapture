@@ -96,11 +96,11 @@ class samtools:
         """
         self.step = step
 
-        self.firstline  = "bwa mem {masterFasta} {stem}{fore} {stem}{reve} | samtools view -bS -o {stem}.mapped.bam --threads {addn} -"
-        self.secondline = "samtools sort {stem}.mapped.bam --threads {addn} > {stem}.mapped.sorted.bam"
-        self.thirdline  = "samtools rmdup -S {stem}.mapped.sorted.bam {stem}.mapped.sorted.rmdup.bam"
-        self.fourthline = "samtools index {stem}.mapped.sorted.rmdup.bam"
-        self.fifthline  = "samtools bam2fq {stem}.mapped.sorted.rmdup.bam > {stem}.rmdup.fastq"
+        self.mem    = "bwa mem {masterFasta} {stem}{fore} {stem}{reve} | samtools view -bS -o {stem}.mapped.bam --threads {addn} -"
+        self.sort   = "samtools sort {stem}.mapped.bam --threads {addn} > {stem}.mapped.sorted.bam"
+        self.rmdup  = "samtools rmdup -S {stem}.mapped.sorted.bam {stem}.mapped.sorted.rmdup.bam"
+        self.index  = "samtools index {stem}.mapped.sorted.rmdup.bam"
+        self.bam2fq = "samtools bam2fq {stem}.mapped.sorted.rmdup.bam > {stem}.rmdup.fastq"
 
         
     
