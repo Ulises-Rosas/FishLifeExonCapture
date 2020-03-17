@@ -102,5 +102,4 @@ class samtools:
         self.index  = "samtools index {stem}.mapped.sorted.rmdup.bam"
         self.bam2fq = "samtools bam2fq {stem}.mapped.sorted.rmdup.bam > {stem}.rmdup.fastq"
 
-        
     
