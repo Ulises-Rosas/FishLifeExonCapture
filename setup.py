@@ -3,6 +3,15 @@
 import setuptools
 from distutils.core import setup
 
+
+fishlifefiles = [
+                # "ProbeSets/*",
+                "map-exons-list.txt",
+                "map-exons-othophysi-list.txt",
+                "all_Master.fasta*",
+                "ALL_Master_Otophysi.fasta*"
+                ]
+    
 setup(
     name = "FishLifeExonCapture",
     version = "0.1",
@@ -10,13 +19,7 @@ setup(
     package_dir  = {"fishlifeexoncapture" : "src",
                     "fishlifedat"         : "."   },
     package_data = {"fishlifeexoncapture"  : ["data/*"],
-                    "fishlifedat"          : [
-                                            # "ProbeSets/*",
-                                              "map-exons-list.txt",
-                                              "map-exons-othophysi-list.txt",
-                                              "all_Master.fasta*",
-                                            #   "ALL_Master_Otophysi.fasta*"
-                                              ]},
+                    "fishlifedat"          : fishlifefiles },
     entry_points = {
         'console_scripts': [
             'trimmomatic-loop-PE = fishlifeexoncapture.step1:main',
