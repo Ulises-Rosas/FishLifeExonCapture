@@ -90,19 +90,12 @@ class samtools:
         stem=$corname/$corname
         ncpu=7
         addn=$(echo -e "$ncpu - 1" | bc)
-
-        unzip it all
-
         bwa mem all_Master.fasta $stem'_paired_R1.fastq' $stem'_paired_R2.fastq' |\
              samtools view -bS -o $stem'.mapped.bam' --threads $addn -;
         samtools sort $stem'.mapped.bam' --threads $addn > $stem'.mapped.sorted.bam';
         samtools rmdup -S $stem'.mapped.sorted.bam' $stem'.mapped.sorted.rmdup.bam';
         samtools index $stem'.mapped.sorted.rmdup.bam';
         samtools bam2fq $stem'.mapped.sorted.rmdup.bam' > $stem'.rmdup.fastq';
-        
-        #spaghetti code
-
-        zip it all?
         """
         self.step = step
         self.path = path
@@ -196,31 +189,39 @@ class samtools:
 
         return (fore, reve)
 
-    def run_mapexons(self):
+    def iter_mapping(self, tc, elist, master):
 
-        tc      = TollCheck(path = self.path, step = self.step)
-        elist   = self.mapexonlist
-
-        # DELETE THIS
-        # ke,va = next(iter(elist.items()))
-        # elist = {ke: va}
-        # DELETE THIS
-        
         for k, v in tc.pickleIt.items():
 
-             if not v.__contains__(self.step):
+            if not v.__contains__(self.step):
 
                 self.stem  = ospj(self.path, k, k)
                 fore, reve = self.checkexs( v['extentions'] )
 
-                self.preparebwaDB( self.memasterfasta, fore, reve )
+                self.preparebwaDB( master, fore, reve )
                 self.exoniterator( elist.items() )
 
                 tc.label(k)
-                # print("\n")
 
+    def run_mapexons(self):
+
+        tc      = TollCheck(path = self.path, step = self.step)
+        elist   = self.mapexonlist
+        # DELETE THIS
+        # ke,va = next(iter(elist.items()))
+        # elist = {ke: va}
+        # DELETE THIS
+        self.iter_mapping(tc, elist, self.memasterfasta)
+        
     def run_mapexonsotophysi(self):
-        pass
+
+        tc      = TollCheck(path = self.path, step = self.step)
+        elist   = self.mapexonotophysilist
+        # DELETE THIS
+        # ke,va = next(iter(elist.items()))
+        # elist = {ke: va}
+        # DELETE THIS
+        self.iter_mapping(tc, elist, self.memasterotophysifasta)        
 
     def run(self):
 

@@ -44,7 +44,20 @@ def getOpts():
 
 def main():
     args = getOpts()
-    print(args)
+
+    fishfiles = SetEnvironment(forwardpat = args.forward,
+                               reversepat = args.reverse,
+                               wpath = args.path,
+                               ncpu  = args.ncpu)
+
+    fishsam   = samtools(corenames = fishfiles.corenames,
+                         path      = args.path,
+                         threads   = args.ncpu,
+                         step      = "step2b" )
+
+    fishfiles.mkdir() # it will do anything,
+    fishfiles.mv()    # if they already exists.
+    fishsam.run()
 
 if __name__ == "__main__":
     main()
