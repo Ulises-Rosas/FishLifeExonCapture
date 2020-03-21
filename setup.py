@@ -10,7 +10,13 @@ setup(
     package_dir  = {"fishlifeexoncapture" : "src",
                     "fishlifedat"         : "."   },
     package_data = {"fishlifeexoncapture"  : ["data/*"],
-                    "fishlifedat"          : ["ProbeSets/*"] },
+                    "fishlifedat"          : [
+                                            # "ProbeSets/*",
+                                              "map-exons-list.txt",
+                                              "map-exons-othophysi-list.txt",
+                                              "all_Master.fasta*",
+                                            #   "ALL_Master_Otophysi.fasta*"
+                                              ]},
     entry_points = {
         'console_scripts': [
             'trimmomatic-loop-PE = fishlifeexoncapture.step1:main',
