@@ -1,8 +1,12 @@
 import re
 import os
 
+from os.path import join as ospj
+from multiprocessing import Pool
+
+import fishlifedat
 from fishlifeexoncapture.fileHandler import TollCheck
-from fishlifeexoncapture.utils import runShell, addpath
+from fishlifeexoncapture.utils import runShell, addpath, getdict
 
 class Trimmomatic:
     def __init__(self,
@@ -77,13 +81,17 @@ class Trimmomatic:
 class samtools:
     
     def __init__(self,
-                 threads = None,
-                 step    = None):
+                 corenames = None,
+                 path      = None,
+                 threads   = None,
+                 step      = None):
         """
         corname="Mormyridae_Marcusenius_sanagaensis_EPLATE_58_A05"
         stem=$corname/$corname
         ncpu=7
         addn=$(echo -e "$ncpu - 1" | bc)
+
+        unzip it all
 
         bwa mem all_Master.fasta $stem'_paired_R1.fastq' $stem'_paired_R2.fastq' |\
              samtools view -bS -o $stem'.mapped.bam' --threads $addn -;
@@ -93,13 +101,135 @@ class samtools:
         samtools bam2fq $stem'.mapped.sorted.rmdup.bam' > $stem'.rmdup.fastq';
         
         #spaghetti code
+
+        zip it all?
         """
         self.step = step
+        self.path = path
+        self.threads = threads
+        self.corenames = corenames
 
-        self.mem    = "bwa mem {masterFasta} {stem}{fore} {stem}{reve} | samtools view -bS -o {stem}.mapped.bam --threads {addn} -"
-        self.sort   = "samtools sort {stem}.mapped.bam --threads {addn} > {stem}.mapped.sorted.bam"
-        self.rmdup  = "samtools rmdup -S {stem}.mapped.sorted.bam {stem}.mapped.sorted.rmdup.bam"
-        self.index  = "samtools index {stem}.mapped.sorted.rmdup.bam"
-        self.bam2fq = "samtools bam2fq {stem}.mapped.sorted.rmdup.bam > {stem}.rmdup.fastq"
+        self.mapexonfile           = "map-exons-list.txt"
+        self.memasterfasta         = "all_Master.fasta"
+        self.mapexonotophysifile   = "map-exons-othophysi-list.txt"
+        self.memasterotophysifasta = "ALL_Master_Otophysi.fasta"
 
-    
+        self.mem1    = "bwa mem {masterfasta} {stem}{fore} {stem}{reve}"
+        self.mem2    = "samtools view -bS -o {stem}.mapped.bam --threads {addn} -"
+
+        self.sort    = "samtools sort {stem}.mapped.bam --threads {addn}"
+        self.sorto   = "{stem}.mapped.sorted.bam"
+
+        self.rmdup   = "samtools rmdup -S {stem}.mapped.sorted.bam {stem}.mapped.sorted.rmdup.bam"
+        self.index   = "samtools index {stem}.mapped.sorted.rmdup.bam"
+        
+        self.bam2fq  = "samtools bam2fq {stem}.mapped.sorted.rmdup.bam"
+        self.bam2fqo = "{stem}.rmdup.fastq"
+
+        self.bam1    = "samtools view -b {stem}.mapped.sorted.rmdup.bam"
+        self.bam2    = "samtools bam2fq"
+        self.bam12o  = "{stem}.{exon}.fq"
+
+        # placeholder
+        self.stem   = ""
+
+    @property
+    def mapexonlist(self):        
+        filename = ospj( fishlifedat.__path__[0], self.mapexonfile)
+        return getdict(filename)
+
+    @property
+    def mapexonotophysilist(self):
+
+        filename = ospj( fishlifedat.__path__[0], self.mapexonotophysifile)
+        return getdict(filename)
+
+    def protoexoniterator(self, item):
+        exon, spps = item
+        # print(exon)
+        exon =  exon.replace('"', '')
+        spps = [i.replace('"', '') for i in spps]
+
+        runShell( 
+                 ( self.bam1.format(stem = self.stem).split() + spps,
+                   self.bam2.split(),
+                   self.bam12o.format(stem = self.stem, exon = exon) ),
+                 type = "pipestdout" )
+
+    def exoniterator(self, exonlist):
+
+        with Pool(processes = self.threads) as p:
+            [ *p.map(self.protoexoniterator, exonlist) ]
+
+    def preparebwaDB(self, masterfasta, fore, reve):
+
+        masterfasta = ospj(fishlifedat.__path__[0], masterfasta)
+        addn        = self.threads - 1
+        runShell(
+                 ( self.mem1.format(masterfasta = masterfasta,
+                                    stem = self.stem,
+                                    fore = fore,
+                                    reve = reve).split(),
+                   self.mem2.format(stem = self.stem,
+                                    addn = addn).split() ),
+                  type = "pipe" )
+        runShell( 
+                 ( self.sort.format(stem  = self.stem, addn = addn).split(),
+                   self.sorto.format(stem = self.stem) ),
+                 type = "stdout" )
+
+        runShell(  self.rmdup.format(stem = self.stem).split() )
+        runShell(  self.index.format(stem = self.stem).split() )
+
+        runShell( 
+                 ( self.bam2fq.format(stem  = self.stem).split(),
+                   self.bam2fqo.format(stem = self.stem) ),
+                 type = "stdout" )
+
+    def checkexs(self, exs):
+
+        fore, reve  = exs
+
+        if os.path.exists(self.stem + "_paired" + fore):
+            fore = "_paired" + fore
+            reve = "_paired" + reve
+
+        return (fore, reve)
+
+    def run_mapexons(self):
+
+        tc      = TollCheck(path = self.path, step = self.step)
+        elist   = self.mapexonlist
+
+        # DELETE THIS
+        # ke,va = next(iter(elist.items()))
+        # elist = {ke: va}
+        # DELETE THIS
+        
+        for k, v in tc.pickleIt.items():
+
+             if not v.__contains__(self.step):
+
+                self.stem  = ospj(self.path, k, k)
+                fore, reve = self.checkexs( v['extentions'] )
+
+                self.preparebwaDB( self.memasterfasta, fore, reve )
+                self.exoniterator( elist.items() )
+
+                tc.label(k)
+                # print("\n")
+
+    def run_mapexonsotophysi(self):
+        pass
+
+    def run(self):
+
+        if self.step == "step2a":
+            self.run_mapexons()
+
+        elif self.step == "step2b":
+            self.run_mapexonsotophysi()
+
+        else:
+            pass
+
