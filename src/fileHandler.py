@@ -12,12 +12,15 @@ class TollCheck:
 
     def __init__(self, 
                  path = None,
+                 pattern = None,
                  step = None,
                  extentions = None):
 
         self.hiddenfile = os.path.join(path, ".ignoreFishLifeExonCapture")
         self.step = step
         self.extentions = extentions
+        self.path = path
+        self.pattern = pattern
 
     def __save_obj__(self, obj = None, name = None):
 
@@ -76,6 +79,24 @@ class TollCheck:
 
         self.__save_obj__(df, self.hiddenfile)
 
+    @property
+    def otherfiles(self):
+        wholeF = os.listdir(self.path)
+        if wholeF:
+            selected = [i for i in wholeF if re.findall(self.pattern, i)]
+            return None if not selected else selected
+
+        else:
+            return None
+
+    def delstep(self, corename):
+        """
+        debugging func
+        """
+        df = self.pickleIt
+        del df[corename][self.step]
+
+        self.__save_obj__(df, self.hiddenfile)
 
 class SetEnvironment:
 
@@ -126,7 +147,7 @@ class SetEnvironment:
 
             else:
                 sys.stdout.write("\n")
-                sys.stdout.write("No files matching forward and reverse pattern\n")
+                sys.stdout.write("No files found\n")
                 exit()
 
         out = [ k for k,v in pairs.items() if v == 2 ]

@@ -3,30 +3,39 @@
 import setuptools
 from distutils.core import setup
 
+# TODO: reduce amount of dependencies for future versions
+dependencies = [
+                "biopython"
+                ]
+
 
 fishlifefiles = [
                 # "ProbeSets/*",
                 "map-exons-list.txt",
                 "map-exons-othophysi-list.txt",
-                "all_Master.fasta*",
-                "ALL_Master_Otophysi.fasta*"
+                "all_Master.fasta*",          # heavy install
+                "ALL_Master_Otophysi.fasta*"  # heavy install
                 ]
     
 setup(
-    name = "FishLifeExonCapture",
+    name = "fishlifeexoncapture",
     version = "0.1",
-    packages = ["fishlifeexoncapture", "fishlifedat"],
+    packages = ["fishlifeexoncapture", "fishlifedat", "fishlifescript"],
     package_dir  = {"fishlifeexoncapture" : "src",
-                    "fishlifedat"         : "."   },
+                    "fishlifedat"         : "."   ,
+                    "fishlifescript"      : "scripts"},
     package_data = {"fishlifeexoncapture"  : ["data/*"],
                     "fishlifedat"          : fishlifefiles },
     entry_points = {
         'console_scripts': [
             'trimmomatic-loop-PE = fishlifeexoncapture.step1:main',
             'map-exons           = fishlifeexoncapture.step2a:main',
-            'map-exons-otophysi  = fishlifeexoncapture.step2b:main'
-        ]
+            'map-exons-otophysi  = fishlifeexoncapture.step2b:main',
+            'initialVelvet       = fishlifeexoncapture.step3:main',
+            'runaTRAM            = fishlifeexoncapture.step4:main'
+            ]
     },
+    install_requires = dependencies,
     classifiers = [
         'Programming Language :: Python :: 3'
         ]
