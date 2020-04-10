@@ -1,12 +1,14 @@
 import re
 import os
+import sys
 
 from os.path import join as ospj
 from multiprocessing import Pool
 
 import fishlifedat
+
 from fishlifeexoncapture.fileHandler import TollCheck
-from fishlifeexoncapture.utils import runShell, addpath, getdict
+from fishlifeexoncapture.utils       import runShell, addpath, getdict, check_reqs
 
 class Trimmomatic:
     def __init__(self,
@@ -234,3 +236,178 @@ class samtools:
         else:
             pass
 
+class Velvet:
+
+    def __init__(self,
+                 tc_class   = None,
+                 pattern    = None,
+                 assem      = None,
+                 path       = None,
+                 threads    = None):
+        self.tc_class   = tc_class
+        self.corenames  = tc_class.pickleIt
+        self.otherfiles = tc_class.otherfiles
+        self.step       = tc_class.step
+        self.path       = tc_class.path
+        self.pattern    = tc_class.pattern
+        
+        self.assem      = assem
+        self.threads    = threads
+        self.int_reqs   = ["step2a", "step2b"]
+
+        self.velveth = "velveth {file}.initial {assem} -short -fastq {file}"
+        self.velvetg = "velvetg {file}.initial"
+        # velveth $f.initial 29 -short -fastq $f;
+
+        # function importing
+        # self.writeLong = writeLong
+
+    def writeLong(self, **kwargs):
+        from fishlifescript.getLongest import writeLong
+        return writeLong( **kwargs )
+
+    def proto_processor(self, d_name = None):
+        p_name, name = d_name
+
+        if os.path.getsize(name):
+            runShell( self.velveth.format(file = name, assem = self.assem).split() )
+            runShell( self.velvetg.format(file = name).split() )
+        
+            contigs_f = ospj("{file}.initial".format(file = name), "contigs.fa")
+
+            if os.path.getsize(contigs_f):
+                self.writeLong(fasta  = contigs_f,
+                               output = "{file}.initial.combined.fa".format(file = name) )
+
+            if self.otherfiles is None:
+                self.tc_class.label(p_name)
+
+            else:
+                if name not in self.otherfiles:
+                    self.tc_class.label(p_name)
+
+        else:
+            os.remove(name)
+
+    def processor(self, files):
+        with Pool(processes = self.threads) as p:
+            [ *p.map( self.proto_processor, files ) ]
+      # [ *map( self.proto_processor, files ) ]
+  
+    def check_otherfiles(self):
+        return [ (self.path, i) for i in self.otherfiles]
+        
+    def check_corenames(self):
+        names = self.corenames
+        out   = []
+
+        for k,v in names.items():
+            isreqs  = check_reqs(self.int_reqs, v)
+            islabel = v.__contains__(self.step)
+
+            if isreqs and not islabel:
+                stem = ospj(self.path, k)
+                out += [ (k, ospj(stem, i)) for i in os.listdir(stem) if re.findall(self.pattern, i)]
+
+        return out
+
+    @property
+    def joinfiles(self):
+        out = []
+        if self.corenames is not None:
+            out += self.check_corenames()
+
+        if self.otherfiles is not None:
+            out += self.check_otherfiles()
+
+        if not out:
+            exit()
+
+        return out
+
+    def run(self):
+        # self.p_otherfiles()
+        # for i in self.joinfiles:
+        #   print(i)
+        self.processor(self.joinfiles)
+
+class aTRAM:
+    """assembler"""
+    def __init__(self, 
+                 tc_class   = None,
+                 threads    = None,
+                 fastq      = None,
+                 velvet     = None,
+                 assambler  = None,
+                 iterations = 5):
+
+        self.tc_class   = tc_class
+        self.corenames  = tc_class.pickleIt
+        self.path       = tc_class.path
+        self.step       = tc_class.step
+
+        self.threads    = threads
+        self.iterations = iterations
+        self.fastq      = fastq
+        self.velvet     = velvet
+        self.assambler  = assambler
+        self.int_reqs   = ["step2a", "step2b"]
+        # defaulf fastq_global = *.fastq
+        self.preprocess = "atram_preprocessor.py -b {db_prefix} -t .  --cpus {threads} --mixed-ends"
+        ## ls *blast* > preprocess_files.txt; ## store file names into it and use it as boolean
+        self.atram      = "atram.py -b {db_prefix} -t . -q {init_combi_fa} -a {assambler} -o {prefix} -i {iter} --cpus {threads}"
+
+    @property    
+    def check_corenames(self):
+
+        names = self.corenames
+        out   = []
+        for k,v in names.items():
+
+            isreqs  = check_reqs(self.int_reqs, v)
+            islabel = v.__contains__(self.step)
+
+            if isreqs and not islabel:
+                out += [(k,ospj(self.path, k))]
+
+        return out
+
+    def run(self):
+
+        if not self.check_corenames:
+            # sys.stdout.write("\n")
+            # sys.stdout.write("No files found\n")
+            exit()
+            
+        for c, i in self.check_corenames:
+
+            fastqs  = [ii for ii in os.listdir(i) if re.findall(self.fastq, ii)]
+            initfas = [ii for ii in os.listdir(i) if re.findall(self.velvet, ii)]
+
+            if not fastqs or not initfas:
+                continue
+
+            db_prefix = ospj(i,c)
+
+            # preprocessing
+            runShell(
+                self.preprocess.format(db_prefix = db_prefix,
+                                        threads  = self.threads ).split() + 
+                [ospj(i, f) for f in fastqs]
+                )
+
+            # atram
+            for iii in initfas:
+                init_exon = ospj(i,iii)
+                runShell(
+                    self.atram.format(
+                        db_prefix     = db_prefix,
+                        init_combi_fa = init_exon,
+                        iter          = self.iterations,
+                        threads       = self.threads,
+                        assambler     = self.assambler,
+                        prefix        = ospj(i, self.assambler)
+                        ).split()
+                    )
+            # self.tc_class.label(c)
+            

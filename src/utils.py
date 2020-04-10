@@ -51,3 +51,8 @@ def getdict(filename):
         tmpl = l.strip().split()
         out[ tmpl[0] ] = tmpl[1:]
     return out
+
+def check_reqs(requirements, labels):
+    # requirements = ["a", "b"]
+    # labels = {"a":1, "b":3}
+    return any( [True for i in requirements if i in labels.keys()] )
