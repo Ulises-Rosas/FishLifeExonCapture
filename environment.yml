@@ -1,0 +1,19 @@
+name: FishLifeExonCapture
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - python=3
+  - pip
+  - trimmomatic
+  - bwa
+  - samtools
+  - velvet
+  - blast
+  - trinity
+  - exonerate
+  - gunzip
+  - gzip
+  - pip:
+    - git+https://github.com/Ulises-Rosas/aTRAM.git#egg=atram[complete]
+    - git+https://github.com/Ulises-Rosas/FishLifeExonCapture.git#egg=fishlifeexoncapture
