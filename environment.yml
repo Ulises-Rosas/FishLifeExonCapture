@@ -2,6 +2,7 @@ name: FishLifeExonCapture
 channels:
   - bioconda
   - defaults
+  - conda-forge
 dependencies:
   - python=3
   - pip
