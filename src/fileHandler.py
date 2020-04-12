@@ -98,6 +98,37 @@ class TollCheck:
 
         self.__save_obj__(df, self.hiddenfile)
 
+    def massivedeletion(self):
+        """
+        delete one step of whole label
+        files
+
+        self = TollCheck(path=".", step = "step1")
+
+        Use under caution
+        """
+        df = self.pickleIt
+
+        for k,v in df.items():
+            del df[k][self.step] 
+        
+        self.__save_obj__(df, self.hiddenfile)
+
+    def massiveaddition(self):
+        """
+        add one step of whole registered files
+        in previous runs
+
+        self = TollCheck(path=".", step = "step1")
+
+        Use under caution
+        """
+        df = self.pickleIt
+
+        for k,v in df.items():
+            df[k][self.step] = 1
+        
+        self.__save_obj__(df, self.hiddenfile)
 class SetEnvironment:
 
     def __init__(self, 

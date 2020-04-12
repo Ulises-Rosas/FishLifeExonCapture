@@ -28,6 +28,7 @@ setup(
                     "fishlifedat"          : fishlifefiles },
     entry_points = {
         'console_scripts': [
+            'fishmanager         = fishlifeexoncapture.fishmanager:main',
             'trimmomatic-loop-PE = fishlifeexoncapture.step1:main',
             'map-exons           = fishlifeexoncapture.step2a:main',
             'map-exons-otophysi  = fishlifeexoncapture.step2b:main',
