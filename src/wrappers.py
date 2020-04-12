@@ -385,6 +385,7 @@ class aTRAM:
             initfas = [ii for ii in os.listdir(i) if re.findall(self.velvet, ii)]
 
             if not fastqs or not initfas:
+                self.tc_class.label(c)
                 continue
 
             db_prefix = ospj(i,c)
@@ -409,5 +410,5 @@ class aTRAM:
                         prefix        = ospj(i, self.assambler)
                         ).split()
                     )
-            # self.tc_class.label(c)
+            self.tc_class.label(c)
             
