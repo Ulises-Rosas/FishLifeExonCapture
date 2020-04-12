@@ -122,7 +122,7 @@ class samtools:
         self.bam2fqo = "{stem}.rmdup.fastq"
 
         self.bam1    = "samtools view -b {stem}.mapped.sorted.rmdup.bam"
-        self.bam2    = "samtools bam2fq"
+        self.bam2    = "samtools bam2fq -"
         self.bam12o  = "{stem}.{exon}.fq"
 
         # placeholder
