@@ -31,6 +31,11 @@ def getOpts():
                         default = None,
                         help    = '[Optional] What to make [Choices = {"deletion", "addition"}]')    
     parser.add_argument('-s', '--step',
+                        choices=["step1",
+                                 "step2a",
+                                 "step2b",
+                                 "step3",
+                                 "step4" ],
                         metavar = "",
                         type    = str,
                         default = None,
