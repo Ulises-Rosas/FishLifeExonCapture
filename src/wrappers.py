@@ -71,7 +71,7 @@ class Trimmomatic:
         return out
 
     def run(self):
-        tc = TollCheck(self.path, self.step)
+        tc = TollCheck(path = self.path, step =  self.step)
 
         for k,v in self.listofopts.items():
 
@@ -355,7 +355,7 @@ class aTRAM:
         # defaulf fastq_global = *.fastq
         self.preprocess = "atram_preprocessor.py -b {db_prefix} -t .  --cpus {threads} --mixed-ends"
         ## ls *blast* > preprocess_files.txt; ## store file names into it and use it as boolean
-        self.atram      = "atram.py -b {db_prefix} -t . -q {init_combi_fa} -a {assambler} -o {prefix} -i {iter} --cpus {threads}"
+        self.atram      = "atram.py -b {db_prefix} -t . -q {init_combi_fa} -a {assambler} -o {prefix} -i {itera} --cpus {threads}"
 
     @property    
     def check_corenames(self):
@@ -404,7 +404,7 @@ class aTRAM:
                     self.atram.format(
                         db_prefix     = db_prefix,
                         init_combi_fa = init_exon,
-                        iter          = self.iterations,
+                        itera         = self.iterations,
                         threads       = self.threads,
                         assambler     = self.assambler,
                         prefix        = ospj(i, self.assambler)
