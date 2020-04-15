@@ -213,8 +213,8 @@ class samtools:
         tc      = TollCheck(path = self.path, step = self.step)
         elist   = self.mapexonlist
         # DELETE THIS
-        ke,va = next(iter(elist.items()))
-        elist = {ke: va}
+        # ke,va = next(iter(elist.items()))
+        # elist = {ke: va}
         # DELETE THIS
         self.iter_mapping(tc, elist, self.memasterfasta)
         
