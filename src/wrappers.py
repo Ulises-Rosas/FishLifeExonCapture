@@ -116,13 +116,13 @@ class samtools:
         self.sorto   = "{stem}.mapped.sorted.bam"
 
         self.rmdup   = "samtools rmdup -S {stem}.mapped.sorted.bam {stem}.mapped.sorted.rmdup.bam"
-        self.index   = "samtools index {stem}.mapped.sorted.rmdup.bam"
+        self.index   = "samtools index -@ {threads} {stem}.mapped.sorted.rmdup.bam"
         
-        self.bam2fq  = "samtools bam2fq {stem}.mapped.sorted.rmdup.bam"
+        self.bam2fq  = "samtools bam2fq --threads {addn} {stem}.mapped.sorted.rmdup.bam"
         self.bam2fqo = "{stem}.rmdup.fastq"
 
-        self.bam1    = "samtools view -b {stem}.mapped.sorted.rmdup.bam"
-        self.bam2    = "samtools bam2fq -"
+        self.bam1    = "samtools view --threads {addn} -b {stem}.mapped.sorted.rmdup.bam"
+        self.bam2    = "samtools bam2fq --threads {addn} -"
         self.bam12o  = "{stem}.{exon}.fq"
 
         # placeholder
@@ -145,9 +145,11 @@ class samtools:
         exon =  exon.replace('"', '')
         spps = [i.replace('"', '') for i in spps]
 
+        addn = self.threads - 1
+
         runShell( 
-                 ( self.bam1.format(stem = self.stem).split() + spps,
-                   self.bam2.split(),
+                 ( self.bam1.format(stem = self.stem, addn = addn).split() + spps,
+                   self.bam2.format(addn = addn).split(),
                    self.bam12o.format(stem = self.stem, exon = exon) ),
                  type = "pipestdout" )
 
@@ -175,10 +177,10 @@ class samtools:
                  type = "stdout" )
 
         runShell(  self.rmdup.format(stem = self.stem).split() )
-        runShell(  self.index.format(stem = self.stem).split() )
+        runShell(  self.index.format(stem = self.stem, threads = self.threads).split() )
 
         runShell( 
-                 ( self.bam2fq.format(stem  = self.stem).split(),
+                 ( self.bam2fq.format(stem  = self.stem, addn = addn).split(),
                    self.bam2fqo.format(stem = self.stem) ),
                  type = "stdout" )
 
@@ -211,8 +213,8 @@ class samtools:
         tc      = TollCheck(path = self.path, step = self.step)
         elist   = self.mapexonlist
         # DELETE THIS
-        # ke,va = next(iter(elist.items()))
-        # elist = {ke: va}
+        ke,va = next(iter(elist.items()))
+        elist = {ke: va}
         # DELETE THIS
         self.iter_mapping(tc, elist, self.memasterfasta)
         
