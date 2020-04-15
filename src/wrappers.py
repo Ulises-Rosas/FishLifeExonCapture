@@ -109,7 +109,7 @@ class samtools:
         self.mapexonotophysifile   = "map-exons-othophysi-list.txt"
         self.memasterotophysifasta = "ALL_Master_Otophysi.fasta"
 
-        self.mem1    = "bwa mem {masterfasta} {stem}{fore} {stem}{reve}"
+        self.mem1    = "bwa mem -t {threads} {masterfasta} {stem}{fore} {stem}{reve}"
         self.mem2    = "samtools view -bS -o {stem}.mapped.bam --threads {addn} -"
 
         self.sort    = "samtools sort {stem}.mapped.bam --threads {addn}"
@@ -163,6 +163,7 @@ class samtools:
         runShell(
                  ( self.mem1.format(masterfasta = masterfasta,
                                     stem = self.stem,
+                                    threads = self.threads,
                                     fore = fore,
                                     reve = reve).split(),
                    self.mem2.format(stem = self.stem,
