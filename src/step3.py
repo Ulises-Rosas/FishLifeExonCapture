@@ -28,8 +28,8 @@ def getOpts():
     parser.add_argument('-f', '--fastq',
                         metavar = "",
                         type    = str,
-                        default = ".fq",
-                        help    = '[Optional] Grouping pattern for fastq files [Default = ".fq"]')
+                        default = ".fq$",
+                        help    = '[Optional] Regex pattern for fastq files [Default = ".fq"]')
     parser.add_argument('-n', '--threads',
                         metavar = "",
                         type    = int,

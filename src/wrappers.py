@@ -1,6 +1,8 @@
 import re
 import os
 import sys
+import pickle
+import shutil
 
 from os.path import join as ospj
 from multiprocessing import Pool
@@ -8,7 +10,7 @@ from multiprocessing import Pool
 import fishlifedat
 
 from fishlifeexoncapture.fileHandler import TollCheck
-from fishlifeexoncapture.utils       import runShell, addpath, getdict, check_reqs
+from fishlifeexoncapture.utils       import runShell, addpath, getdict, check_reqs, getexons
 
 class Trimmomatic:
     def __init__(self,
@@ -116,7 +118,7 @@ class samtools:
         self.sorto   = "{stem}.mapped.sorted.bam"
 
         self.rmdup   = "samtools rmdup -S {stem}.mapped.sorted.bam {stem}.mapped.sorted.rmdup.bam"
-        self.index   = "samtools index -@ {threads} {stem}.mapped.sorted.rmdup.bam"
+        self.index   = "samtools index -@{threads} {stem}.mapped.sorted.rmdup.bam"
         
         self.bam2fq  = "samtools bam2fq --threads {addn} {stem}.mapped.sorted.rmdup.bam"
         self.bam2fqo = "{stem}.rmdup.fastq"
@@ -269,8 +271,8 @@ class Velvet:
         from fishlifescript.getLongest import writeLong
         return writeLong( **kwargs )
 
-    def proto_processor(self, d_name = None):
-        p_name, name = d_name
+    def proto_processor(self,name = None):
+        # p_name, name = d_name
 
         if os.path.getsize(name):
             runShell( self.velveth.format(file = name, assem = self.assem).split() )
@@ -282,23 +284,20 @@ class Velvet:
                 self.writeLong(fasta  = contigs_f,
                                output = "{file}.initial.combined.fa".format(file = name) )
 
-            if self.otherfiles is None:
-                self.tc_class.label(p_name)
-
-            else:
-                if name not in self.otherfiles:
-                    self.tc_class.label(p_name)
-
         else:
             os.remove(name)
 
     def processor(self, files):
-        with Pool(processes = self.threads) as p:
-            [ *p.map( self.proto_processor, files ) ]
-      # [ *map( self.proto_processor, files ) ]
-  
+
+        for core, fastqs in files:
+            with Pool(processes = self.threads) as p:
+                [ *p.map( self.proto_processor, fastqs) ]
+
+            self.tc_class.label(core)
+
     def check_otherfiles(self):
-        return [ (self.path, i) for i in self.otherfiles]
+        # experimental yet
+        return [ (i, i) for i in self.otherfiles]
         
     def check_corenames(self):
         names = self.corenames
@@ -310,7 +309,7 @@ class Velvet:
 
             if isreqs and not islabel:
                 stem = ospj(self.path, k)
-                out += [ (k, ospj(stem, i)) for i in os.listdir(stem) if re.findall(self.pattern, i)]
+                out.append( (k, [ospj(stem, i) for i in os.listdir(stem) if re.findall(self.pattern, i)]) )
 
         return out
 
@@ -333,6 +332,7 @@ class Velvet:
         # for i in self.joinfiles:
         #   print(i)
         self.processor(self.joinfiles)
+        # print(self.joinfiles)
 
 class aTRAM:
     """assembler"""
@@ -415,3 +415,240 @@ class aTRAM:
                     )
             self.tc_class.label(c)
             
+class Cdhit:
+    """wrapper for ch-hit-est"""
+    def __init__(self, 
+                 identity = 1,
+                 threads   = None,
+                 tc_class  = None,
+                 fasta     = None,
+                 memory    = 800):
+
+        self.int_reqs   = ["step4"]
+
+        self.tc_class   = tc_class
+        self.corenames  = tc_class.pickleIt
+        self.path       = tc_class.path
+        self.step       = tc_class.step
+
+
+        self.threads   = threads
+        self.memory    = memory
+        self.identity  = identity
+        self.fasta     = fasta
+
+        self.cdhitest  = "cd-hit-est -i {filt_cons} -o {filt_cons}.cdhit -c {identity} -M {memory}"
+        self.processed = []
+
+    @property    
+    def check_corenames(self):
+
+        names = self.corenames
+        out   = []
+        for k,v in names.items():
+
+            isreqs  = check_reqs(self.int_reqs, v)
+            islabel = v.__contains__(self.step)
+
+            if isreqs and not islabel:
+                out += [(k,ospj(self.path, k))]
+
+        return out
+
+    def protoexoniterator(self, files_info):
+
+        patt = self.fasta
+        core,path  = files_info
+        # print(core)
+        # print(path)
+        # print("\n")
+        contings = [i for i in os.listdir(path) if re.findall(patt, i)]
+        if contings:
+            out = []
+            for fc in contings:
+                filt_cons = ospj(path, fc)
+                runShell(
+                    self.cdhitest.format(
+                            filt_cons = filt_cons,
+                            identity  = self.identity,
+                            memory    = self.memory).split() )
+                
+                out += [filt_cons + ".cdhit"] 
+
+            return out
+
+    def exoniterator(self):
+
+        if not self.check_corenames:
+            exit()
+
+        out = []
+        with Pool(processes = self.threads) as p:
+            out += p.map(self.protoexoniterator, self.check_corenames)
+
+        for i in filter(None,out):
+            self.processed.extend(i)
+
+    def run(self):
+        self.exoniterator()
+
+class Exonerate:
+    """
+    running model:
+
+        exonerate --model coding2genome\
+              -t $filterfile\
+              -q ../ReadingFramesPercomorph/$exon.fasta\
+              --ryo ">%ti\t%qab-%qae\n%tas"\
+              --geneticcode 2\
+              --showcigar F\
+              --showvulgar F\
+              --showalignment F\
+              --showsugar F\
+              --showquerygff F\
+              --showtargetgff F\
+              --bestn 2 
+    """
+    def __init__(self, 
+                 tc_class  = None,
+                 threads   = None,
+                 memory    = None,
+                 assambler = None,
+                 checked_names = None):
+        
+        self.tc_class   = tc_class
+        self.path       = tc_class.path
+        self.step       = tc_class.step
+
+        self.threads   = threads
+        self.memory    = memory
+        self.assambler = assambler
+        self.check_corenames = checked_names
+
+        # placeholders for runnings
+        self.processed = []
+        self.maindir   = ""
+        
+        self.exonerate = """
+            exonerate --model coding2genome\
+                        -t {cdhit_out}\
+                        -q {exon_file}\
+                        --geneticcode 2\
+                        --showcigar F\
+                        --showvulgar F\
+                        --showalignment F\
+                        --showsugar F\
+                        --showquerygff F\
+                        --showtargetgff F\
+                        --bestn 2\
+                        --ryo
+                """
+    @property
+    def exonlist(self):
+        
+        if self.step == "step5percomorph":
+
+            self.maindir =  "ReadingFramesPercomorph"
+            return getexons(self.maindir)
+
+        elif self.step == "step5elopomorph":
+
+            self.maindir = "ReadingFramesElopomorph"
+            return getexons(self.maindir)
+
+        elif self.step == "step5osteoglossomorph":
+
+            self.maindir = "ReadingFramesOsteoglossomorph"
+            return getexons(self.maindir)
+
+        elif self.step == "step5otophysi":
+
+            self.maindir = "ReadingFramesOtophysi"
+            return getexons(self.maindir)
+
+        else:
+            pass
+
+    @property
+    def hiddendir(self):
+        """
+        it only should be used 
+        after calling `self.exonlist`.
+        This is due to a variable created
+        on that property is used here
+        """
+        return os.path.join(self.path, "." + "tmp_" + self.maindir)
+
+    def checkAndCreateDire(self):
+
+        if not os.path.isdir(self.hiddendir):
+            os.mkdir(self.hiddendir)
+
+    def checkAndCreateFile(self, name, content):
+
+        completename = os.path.join(self.hiddendir, name)
+
+        if not os.path.exists(completename):
+            
+            with open(completename, 'w') as f:
+                for k,v in content.items():
+                    f.write(  k + "\n"  )
+                    f.write(  v + "\n"  )
+
+        return completename
+
+    def checkExon(self, exons, filename):
+
+        exonname = None
+        content  = None
+
+        for k,v in exons.items():
+
+            tmp_name = k[1].replace(".fasta", "")
+
+            if re.findall(tmp_name, filename):
+                exonname = k
+                content  = v 
+
+        return (exonname, content)
+
+    def protoexoniterator(self, filename):
+
+        # tc_class = TollCheck(path = ".", step = "step5percomorph")
+        # self  =  Exonerate(tc_class = tc_class)
+
+        exons = self.exonlist
+        # filename = "./Mormyridae_Marcusenius_sanagaensis_EPLATE_58_A05/velvet.Mormyridae_Marcusenius_sanagaensis_EPLATE_58_A05_Mormyridae_Marcusenius_sanagaensis_EPLATE_58_A05.COI.fq.initial.combined.filtered_contigs.fasta.cdhit"
+        # '>%ti\t%qab-%qae\n%tas'
+
+        exonname, content = self.checkExon(exons, filename)
+        
+        if not exonname: 
+            return None
+
+        self.checkAndCreateDire()
+
+        created_file  = self.checkAndCreateFile(exonname[1], content)
+        output_file = filename + ".exonerate.fasta" if exonname[0] == "nucl" else  filename + ".exonerateMito.fasta"
+
+        self.exonerate.format(
+                    cdhit_out = filename,
+                    exon_file = created_file).split() + ['>%ti\t%qab-%qae\n%tas']
+
+    def exoniterator(self, filenames):
+
+        with Pool(processes = self.threads) as p:
+            out = p.map(self.protoexoniterator, filenames) 
+
+        return out
+
+    def run(self, input = None):
+        
+        for f in input:
+            self.processed += [ self.exoniterator(f) ]
+
+
+
+
+
+
