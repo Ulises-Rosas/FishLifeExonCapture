@@ -110,7 +110,9 @@ class TollCheck:
         df = self.pickleIt
 
         for k,v in df.items():
-            del df[k][self.step] 
+            
+            if df[k].__contains__(self.step):
+                del df[k][self.step] 
         
         self.__save_obj__(df, self.hiddenfile)
 
