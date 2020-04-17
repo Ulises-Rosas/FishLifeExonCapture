@@ -17,10 +17,10 @@ fishlifefiles = [
                 # "ALL_Master_Otophysi.fasta*"  # heavy install
                 "ExonList.txt",
                 "MitochondrialExonList.txt",
-                "ReadingFramesPercomorph/*",
-                "ReadingFramesElopomorph/*",
-                "ReadingFramesOtophysi/*",
-                "ReadingFramesOsteoglossomorph/*"
+                "ReadingFramesOtophysi.dict",
+                "ReadingFramesElopomorph.dict",
+                "ReadingFramesPercomorph.dict",
+                "ReadingFramesOsteoglossomorph.dict"
                 ]
     
 setup(
@@ -34,6 +34,7 @@ setup(
                     "fishlifedat"          : fishlifefiles },
     entry_points = {
         'console_scripts': [
+            'joinexonfiles           = fishlifescript.joinexonfiles:main',
             'fishmanager             = fishlifeexoncapture.fishmanager:main',
             'trimmomatic-loop-PE     = fishlifeexoncapture.step1:main',
             'map-exons               = fishlifeexoncapture.step2a:main',
