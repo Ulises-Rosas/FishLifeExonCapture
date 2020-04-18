@@ -35,7 +35,12 @@ def getOpts():
                                  "step2a",
                                  "step2b",
                                  "step3",
-                                 "step4" ],
+                                 "step4" ,
+                                 "step5percomorph",
+                                 "step5elopomorph",
+                                 "step5osteoglossomorph",
+                                 "step5otophysi"
+                                 ],
                         metavar = "",
                         type    = str,
                         default = None,

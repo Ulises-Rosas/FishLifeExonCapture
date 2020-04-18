@@ -1,6 +1,7 @@
 import re
 import os
 import sys
+import glob
 import pickle
 import shutil
 
@@ -10,7 +11,7 @@ from multiprocessing import Pool
 import fishlifedat
 
 from fishlifeexoncapture.fileHandler import TollCheck
-from fishlifeexoncapture.utils       import runShell, addpath, getdict, check_reqs, getexons
+from fishlifeexoncapture.utils       import runShell, addpath, getdict, check_reqs
 
 class Trimmomatic:
     def __init__(self,
@@ -277,13 +278,15 @@ class Velvet:
         if os.path.getsize(name):
             runShell( self.velveth.format(file = name, assem = self.assem).split() )
             runShell( self.velvetg.format(file = name).split() )
-        
-            contigs_f = ospj("{file}.initial".format(file = name), "contigs.fa")
+
+            out_dirvelvet = "{file}.initial".format(file = name)
+            contigs_f     = ospj(out_dirvelvet, "contigs.fa")
 
             if os.path.getsize(contigs_f):
                 self.writeLong(fasta  = contigs_f,
                                output = "{file}.initial.combined.fa".format(file = name) )
 
+            shutil.rmtree(out_dirvelvet)
         else:
             os.remove(name)
 
@@ -342,7 +345,8 @@ class aTRAM:
                  fastq      = None,
                  velvet     = None,
                  assambler  = None,
-                 iterations = 5):
+                 iterations = 5,
+                 keep       = False):
 
         self.tc_class   = tc_class
         self.corenames  = tc_class.pickleIt
@@ -354,6 +358,7 @@ class aTRAM:
         self.fastq      = fastq
         self.velvet     = velvet
         self.assambler  = assambler
+        self.keep       = keep
         self.int_reqs   = ["step2a", "step2b"]
         # defaulf fastq_global = *.fastq
         self.preprocess = "atram_preprocessor.py -b {db_prefix} -t .  --cpus {threads} --mixed-ends"
@@ -374,6 +379,17 @@ class aTRAM:
                 out += [(k,ospj(self.path, k))]
 
         return out
+
+    def rename(self, name_info):
+
+        core, name = name_info
+        if re.findall( "{0}_{0}".format(core), name ):
+            outname = name.replace(  "{0}_{0}".format(core), core )
+
+            try:
+                os.rename(name, outname)
+            except  FileExistsError:
+                pass
 
     def run(self):
 
@@ -413,6 +429,24 @@ class aTRAM:
                         prefix        = ospj(i, self.assambler)
                         ).split()
                     )
+
+            toshort = [ (c,s) for s in glob.glob( ospj(i, "velvet." + c + "*"))]
+
+            with Pool(processes = self.threads) as p:
+                [*p.map(self.rename, toshort)]
+
+            
+            if not self.keep:
+                blasts  = glob.glob( ospj(i, "*blast*"))
+                sqlite  = glob.glob( ospj(i, "*sqlite*"))
+                logs    = glob.glob( ospj(i, "*.atram.log"))
+                prelogs = glob.glob( ospj(i, "*.atram_preprocessor.log"))
+                
+                to_rm = blasts + sqlite + logs + prelogs
+
+                with Pool(processes = self.threads) as p:
+                    [*p.map(os.remove, to_rm)]
+
             self.tc_class.label(c)
             
 class Cdhit:
@@ -455,27 +489,16 @@ class Cdhit:
 
         return out
 
-    def protoexoniterator(self, files_info):
+    def protoexoniterator(self, path):
 
-        patt = self.fasta
-        core,path  = files_info
-        # print(core)
-        # print(path)
-        # print("\n")
-        contings = [i for i in os.listdir(path) if re.findall(patt, i)]
-        if contings:
-            out = []
-            for fc in contings:
-                filt_cons = ospj(path, fc)
-                runShell(
-                    self.cdhitest.format(
-                            filt_cons = filt_cons,
-                            identity  = self.identity,
-                            memory    = self.memory).split() )
-                
-                out += [filt_cons + ".cdhit"] 
-
-            return out
+        runShell(
+            self.cdhitest.format(
+                    filt_cons = path,
+                    identity  = self.identity,
+                    memory    = self.memory).split() 
+        )
+            
+        return path + ".cdhit"
 
     def exoniterator(self):
 
@@ -483,14 +506,25 @@ class Cdhit:
             exit()
 
         out = []
-        with Pool(processes = self.threads) as p:
-            out += p.map(self.protoexoniterator, self.check_corenames)
+        patt = self.fasta
 
-        for i in filter(None,out):
-            self.processed.extend(i)
+        for core, path in self.check_corenames:
+
+            contings = [ospj(path, i) for i in os.listdir(path) if re.findall(patt, i)]
+
+            if not contings:
+                continue
+
+            with Pool(processes = self.threads) as p:
+                dir_files = [*p.map(self.protoexoniterator, contings)]
+
+            out.append((core, dir_files))
+
+        self.processed.extend(out)
 
     def run(self):
         self.exoniterator()
+        # print(self.processed)
 
 class Exonerate:
     """
@@ -514,6 +548,8 @@ class Exonerate:
                  threads   = None,
                  memory    = None,
                  assambler = None,
+                 identity  = 0.99,
+                 keep      = False,
                  checked_names = None):
         
         self.tc_class   = tc_class
@@ -524,10 +560,16 @@ class Exonerate:
         self.memory    = memory
         self.assambler = assambler
         self.check_corenames = checked_names
+        self.keep      = keep
+        self.identity  = identity 
 
         # placeholders for runnings
         self.processed = []
         self.maindir   = ""
+        # often repeated extentions
+        self.extentions = (".exonerate.fasta",
+                           ".exonerateMito.fasta",
+                           ".exonerate_filtered.fa")
         
         self.exonerate = """
             exonerate --model coding2genome\
@@ -543,28 +585,35 @@ class Exonerate:
                         --bestn 2\
                         --ryo
                 """
+        self.ryo = ['>%ti\t%qab-%qae\n%tas']
+        self.cdhitest = "cd-hit-est -i {input} -o {output} -c {identity}"
+
+    def getexons(self, **kwargs):
+        from fishlifeexoncapture.utils import getexons
+        return getexons( **kwargs )
+
     @property
     def exonlist(self):
         
         if self.step == "step5percomorph":
 
             self.maindir =  "ReadingFramesPercomorph"
-            return getexons(self.maindir)
+            return self.getexons(tmp_dir = self.maindir)
 
         elif self.step == "step5elopomorph":
 
             self.maindir = "ReadingFramesElopomorph"
-            return getexons(self.maindir)
+            return self.getexons(tmp_dir = self.maindir)
 
         elif self.step == "step5osteoglossomorph":
 
             self.maindir = "ReadingFramesOsteoglossomorph"
-            return getexons(self.maindir)
+            return self.getexons(tmp_dir = self.maindir)
 
         elif self.step == "step5otophysi":
 
             self.maindir = "ReadingFramesOtophysi"
-            return getexons(self.maindir)
+            return self.getexons(tmp_dir = self.maindir)
 
         else:
             pass
@@ -580,6 +629,13 @@ class Exonerate:
         return os.path.join(self.path, "." + "tmp_" + self.maindir)
 
     def checkAndCreateDire(self):
+
+        if not self.maindir:
+            # summon exonlist
+            # variables created
+            # at property if main dir
+            # does not exist
+            self.exonlist
 
         if not os.path.isdir(self.hiddendir):
             os.mkdir(self.hiddendir)
@@ -597,8 +653,9 @@ class Exonerate:
 
         return completename
 
-    def checkExon(self, exons, filename):
+    def checkExon(self, filename):
 
+        exons    = self.exonlist
         exonname = None
         content  = None
 
@@ -612,40 +669,93 @@ class Exonerate:
 
         return (exonname, content)
 
-    def protoexoniterator(self, filename):
+    def getoriented(self, **kwargs):
+        from fishlifescript.filterExons import getoriented
+        return getoriented( **kwargs)
 
-        # tc_class = TollCheck(path = ".", step = "step5percomorph")
-        # self  =  Exonerate(tc_class = tc_class)
+    def countheaders(self, file):
 
-        exons = self.exonlist
-        # filename = "./Mormyridae_Marcusenius_sanagaensis_EPLATE_58_A05/velvet.Mormyridae_Marcusenius_sanagaensis_EPLATE_58_A05_Mormyridae_Marcusenius_sanagaensis_EPLATE_58_A05.COI.fq.initial.combined.filtered_contigs.fasta.cdhit"
-        # '>%ti\t%qab-%qae\n%tas'
+        with open(file, 'r') as f:
+            mylist = f.readlines()
 
-        exonname, content = self.checkExon(exons, filename)
+        return len( [True for i in mylist if re.findall(">", i) ]  )
+
+    def protoexoniterator(self, core_filename):
+
+        core, filename = core_filename
+
+        missarg               = self.ryo
+        nuclex, mitoex, filex = self.extentions
+        exonname, content     = self.checkExon(filename)
+        # print(exonname)
         
         if not exonname: 
             return None
 
-        self.checkAndCreateDire()
+        created_file = self.checkAndCreateFile(exonname[1], content)
+        exonera_out  = filename + nuclex if exonname[0] == 'nucl' else filename + mitoex
+        filter_out   = exonera_out + filex
+        cdhitest_out = filename + ".exonerate.final_contigs.fa"
 
-        created_file  = self.checkAndCreateFile(exonname[1], content)
-        output_file = filename + ".exonerate.fasta" if exonname[0] == "nucl" else  filename + ".exonerateMito.fasta"
-
-        self.exonerate.format(
+        cmd = self.exonerate.format(
                     cdhit_out = filename,
-                    exon_file = created_file).split() + ['>%ti\t%qab-%qae\n%tas']
+                    exon_file = created_file
+                    ).split() + missarg
 
+        runShell((cmd, exonera_out), type = "stdout")
+
+        self.getoriented(fasta = exonera_out, taxon = core, output = filter_out)
+
+        cmd2 = self.cdhitest.format(
+                    identity = self.identity,
+                    input  = filter_out,
+                    output = cdhitest_out)
+
+        runShell(cmd2.split())
+
+        count = self.countheaders(cdhitest_out)
+
+        if not self.keep:
+            os.remove(exonera_out)
+            os.remove(filter_out)
+            os.remove(cdhitest_out + ".clstr")
+            os.remove(filename     + ".clstr")
+
+        if count > 1:
+            return "%s,%s\n" % (exonname[1].replace(".fasta", ""), "failed")
+
+        elif count == 0:
+            os.remove(cdhitest_out)
+            return None
+
+        else:
+            return "%s,%s\n" % (exonname[1].replace(".fasta", ""), "passed")
+            
     def exoniterator(self, filenames):
 
-        with Pool(processes = self.threads) as p:
-            out = p.map(self.protoexoniterator, filenames) 
+        # self.exonlist
+        self.checkAndCreateDire()
 
-        return out
+        for core,files in filenames:
+
+            file_info = [(core, i) for i in files]
+            exoninfo  = "%s_%s.csv" % (core, self.step)
+
+            with open(ospj(self.path, core, exoninfo), "w") as f:
+
+                with Pool(processes = self.threads) as p:
+                    mystrings = p.map(self.protoexoniterator, file_info )
+
+                for l in filter(None, mystrings):
+                    f.write(l)
+
+            self.tc_class.label(core)
+
+        shutil.rmtree(self.hiddendir)
 
     def run(self, input = None):
-        
-        for f in input:
-            self.processed += [ self.exoniterator(f) ]
+        self.exoniterator(input)
+
 
 
 

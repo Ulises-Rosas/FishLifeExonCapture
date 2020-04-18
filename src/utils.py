@@ -15,10 +15,10 @@ def runShell(args, type = ""):
 
     elif type == "stdout":
         a, b = args
-
-        f = open(b, "w")
-        subprocess.call(a, stdout= f)
-        f.close()
+        # f = open(b, "w")
+        with open(b, "w") as f:
+            subprocess.call(a, stdout= f)
+        
     
     elif type == "pipestdout":
         a, b, c = args
