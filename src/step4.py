@@ -46,11 +46,9 @@ def getOpts():
                         type    = int,
                         default = 1,
                         help    = '[Optional] number of cpus [Default = 1]')
-    # parser.add_argument('-h',
-    #                     '--help',
-    #                     action='store_true',
-    #                     help='Show this help message and exit.' )
-
+    parser.add_argument('-k', '--keepdb',
+                        action= "store_true",
+                        help    = '[Optional] If seleceted, databases and intermediate files are')
     return parser.parse_args()
 
 def main():
@@ -64,7 +62,8 @@ def main():
                       fastq      = args.fastq,
                       velvet     = args.velvetout,
                       iterations = args.iterations,
-                      assambler = args.assambler)
+                      assambler  = args.assambler,
+                      keep       = args.keepdb)
 
     atram.run()
 
