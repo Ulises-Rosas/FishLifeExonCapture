@@ -26,16 +26,22 @@ fishlifefiles = [
 setup(
     name = "fishlifeexoncapture",
     version = "0.1",
-    packages = ["fishlifeexoncapture", "fishlifedat", "fishlifescript"],
+    packages = ["fishlifeexoncapture",
+                "fishlifedat",
+                "fishlifescript",
+                "fishmanager"
+                ],
     package_dir  = {"fishlifeexoncapture" : "src",
                     "fishlifedat"         : "."   ,
-                    "fishlifescript"      : "scripts"},
+                    "fishlifescript"      : "scripts",
+                    "fishmanager"         : "src/fishmanager",
+                    },
     package_data = {"fishlifeexoncapture"  : ["data/*"],
                     "fishlifedat"          : fishlifefiles },
     entry_points = {
         'console_scripts': [
             'joinexonfiles           = fishlifescript.joinexonfiles:main',
-            'fishmanager             = fishlifeexoncapture.fishmanager:main',
+            'fishmanager             = fishmanager.fishmanager:main',
             'trimmomatic-loop-PE     = fishlifeexoncapture.step1:main',
             'map-exons               = fishlifeexoncapture.step2a:main',
             'map-exons-otophysi      = fishlifeexoncapture.step2b:main',
