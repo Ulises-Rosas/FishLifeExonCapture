@@ -345,6 +345,7 @@ class aTRAM:
                  fastq      = None,
                  velvet     = None,
                  assambler  = None,
+                 memory     = None,
                  iterations = 5,
                  keep       = False):
 
@@ -354,16 +355,26 @@ class aTRAM:
         self.step       = tc_class.step
 
         self.threads    = threads
+        self.memory     = memory
         self.iterations = iterations
         self.fastq      = fastq
         self.velvet     = velvet
         self.assambler  = assambler
         self.keep       = keep
+
         self.int_reqs   = ["step2a", "step2b"]
         # defaulf fastq_global = *.fastq
         self.preprocess = "atram_preprocessor.py -b {db_prefix} -t .  --cpus {threads} --mixed-ends"
         ## ls *blast* > preprocess_files.txt; ## store file names into it and use it as boolean
-        self.atram      = "atram.py -b {db_prefix} -t . -q {init_combi_fa} -a {assambler} -o {prefix} -i {itera} --cpus {threads}"
+        self.atram      = """atram.py\
+                             -b {db_prefix}\
+                             -t .\
+                             -q {init_combi_fa}\
+                             -a {assambler}\
+                             -o {prefix}\
+                             -i {itera}\
+                             --cpus {threads}\
+                             --max-memory {memory}"""
 
     @property    
     def check_corenames(self):
@@ -426,6 +437,7 @@ class aTRAM:
                         itera         = self.iterations,
                         threads       = self.threads,
                         assambler     = self.assambler,
+                        memory        = self.memory,
                         prefix        = ospj(i, self.assambler)
                         ).split()
                     )
