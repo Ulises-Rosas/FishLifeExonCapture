@@ -23,7 +23,6 @@ parser = argparse.ArgumentParser( formatter_class = argparse.RawDescriptionHelpF
                                       description = '''
                                  File Manager
                          Created for debugging puporses
-                                  Ulises Rosas
                                       ''')
 
 subparsers = parser.add_subparsers(help='', dest='subcommand')
