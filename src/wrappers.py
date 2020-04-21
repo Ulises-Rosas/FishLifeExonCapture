@@ -216,8 +216,9 @@ class samtools:
         tc      = TollCheck(path = self.path, step = self.step)
         elist   = self.mapexonlist
         # DELETE THIS
-        # ke,va = next(iter(elist.items()))
-        # elist = {ke: va}
+        # del_n = 30
+        # del_keys = list(elist.keys())[0:del_n]
+        # elist =  { del_i:elist[del_i] for del_i in del_keys }
         # DELETE THIS
         self.iter_mapping(tc, elist, self.memasterfasta)
         
@@ -373,6 +374,7 @@ class aTRAM:
                              -a {assambler}\
                              -o {prefix}\
                              -i {itera}\
+                             --log-level=error\
                              --cpus {threads}\
                              --max-memory {memory}"""
 
@@ -453,8 +455,9 @@ class aTRAM:
                 sqlite  = glob.glob( ospj(i, "*sqlite*"))
                 logs    = glob.glob( ospj(i, "*.atram.log"))
                 prelogs = glob.glob( ospj(i, "*.atram_preprocessor.log"))
+                allcont = glob.glob( ospj(i, "*.all_contigs.fasta"))
                 
-                to_rm = blasts + sqlite + logs + prelogs
+                to_rm = blasts + sqlite + logs + prelogs + allcont
 
                 with Pool(processes = self.threads) as p:
                     [*p.map(os.remove, to_rm)]

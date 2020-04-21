@@ -12,7 +12,6 @@ def getOpts():
                                       description = '''
                         Step 4: Run aTRAM
                                       '''
-                                    #   , add_help=False
                                       )
 
     parser.add_argument('-p', '--path',
