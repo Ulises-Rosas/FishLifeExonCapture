@@ -12,7 +12,6 @@ def getOpts():
                                       description = '''
                         Step 3: Build initial assemblies with Velvet
                                       '''
-                                    #   , add_help=False
                                       )
 
     parser.add_argument('-p', '--path',
@@ -29,16 +28,22 @@ def getOpts():
                         metavar = "",
                         type    = str,
                         default = ".fq$",
-                        help    = '[Optional] Regex pattern for fastq files [Default = ".fq"]')
+                        help    = '[Optional] Regex pattern for fastq files [Default = ".fq$"]')
     parser.add_argument('-n', '--threads',
                         metavar = "",
                         type    = int,
                         default = 1,
                         help    = '[Optional] number of cpus [Default = 1]')
-    # parser.add_argument('-h',
-    #                     '--help',
-    #                     action='store_true',
-    #                     help='Show this help message and exit.' )
+    parser.add_argument('-b', '--branch',
+                        metavar = "",
+                        type    = str,
+                        default = None,
+                        help    = '''[Optional] If metadata was splitted
+                                     with `fishmanager split X`, where X is 
+                                     a number, this option
+                                     let to work only in a specific branch.
+                                     To have more details about branch scheme
+                                     run: `fishmanager look` [Default = None]''')
 
     return parser.parse_args()
 
@@ -48,7 +53,8 @@ def main():
 
     fishfiles = TollCheck(path    = args.path,
                           pattern = args.fastq,
-                          step    = "step3")
+                          step    = "step3",
+                          branch    = args.branch)
 
     velvet    = Velvet(tc_class   = fishfiles,
                        assem      = args.assem,

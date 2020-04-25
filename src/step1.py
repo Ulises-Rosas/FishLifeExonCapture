@@ -3,43 +3,15 @@
 import os
 import argparse
 
-from fishlifeexoncapture.fileHandler import SetEnvironment
+from fishlifeexoncapture.fileHandler import TollCheck
 from fishlifeexoncapture.wrappers    import Trimmomatic
-
-
-def cUsage():
-    return """
-
-usage: iterateTrimmomaticPE [-h] [-p] [-a] [-f] [-r] [-n] [-i  [...]] [-l] [-t] [-s  [...]] [-m]
-
-                        Step 1: Iterate Trimmomatic PE
-                                      
-
-general options:
-  -h, --help          show this help message and exit
-
-  -p , --path         Path where files are [Default = "."]
-  -a , --adapters     Path where adapters are [Default = TrueSeq3-PE.fa]
-  -f , --forward      Grouping pattern of forward files [Default = "_R1.fastq.gz"]
-  -r , --reverse      Grouping pattern of reverse files [Default = "_R2.fastq.gz"]
-  -n , --ncpu         number of cpus [Default = 1]
-
-trimmomatic options:
-  -l , --leading     Leading [Default = 5]
-  -t , --trailing    Trailing [Default = 5]
-  -m , --minlen      Min len [Default = 31]
-  -i [ ...], --illuminaclip [ ...]  Illumina clip values [Default = "[2,30,10]"]
-  -s [ ...], --sliding      [ ...]  Sliding window [Default = "[4, 15]"]
-  
-    """
-
 
 def getOpts():
 
     parser = argparse.ArgumentParser( formatter_class = argparse.RawDescriptionHelpFormatter, 
                                       description = '''
                         Step 1: Iterate Trimmomatic PE
-                                      ''', add_help=False)
+                        ''')
 
     parser.add_argument('-p', '--path',
                         metavar = "",
@@ -51,16 +23,6 @@ def getOpts():
                         type    = str,
                         default = None,
                         help    = '[Optional] Path where adapters are [Default = TrueSeq3-PE.fa]')
-    parser.add_argument('-f', '--forward',
-                        metavar = "",
-                        type    = str,
-                        default = "_R1.fastq.gz",
-                        help    = '[Optional] Grouping pattern of forward files [Default = "_R1.fastq.gz"]')
-    parser.add_argument('-r', '--reverse',
-                        metavar = "",
-                        type    = str,
-                        default = "_R2.fastq.gz",
-                        help    = '[Optional] Grouping pattern of reverse files [Default = "_R2.fastq.gz"]')
     parser.add_argument('-n', '--ncpu',
                         metavar = "",
                         type    = int,
@@ -68,7 +30,7 @@ def getOpts():
                         help    = '[Optional] number of cpus [Default = 4]')
     parser.add_argument('-i', '--illuminaclip',
                         metavar = "",
-                        nargs= "+",
+                        nargs= 3,
                         default = [2,30,10],
                         help    = '[Optional] Illumina clip values [Default = "[2,30,10]"]')
     parser.add_argument('-l', '--leading',
@@ -83,7 +45,7 @@ def getOpts():
                         help    = '[Optional] Trailing [Default = 5]')
     parser.add_argument('-s', '--sliding',
                         metavar = "",
-                        nargs = "+",
+                        nargs = 2,
                         default = [4, 15],
                         help    = '[Optional] Sliding window [Default = "[4, 15]"]')
     parser.add_argument('-m', '--minlen',
@@ -91,11 +53,20 @@ def getOpts():
                         type    = int,
                         default = 31,
                         help    = '[Optional] Min len [Default = 31]')
+    parser.add_argument('-b', '--branch',
+                        metavar = "",
+                        type    = str,
+                        default = None,
+                        help    = '''[Optional] If metadata was splitted
+                                     with `fishmanager split X`, where X is 
+                                     a number or a list of numbers, this option
+                                     let to work only in a specific partition.
+                                     To have more details about partition scheme
+                                     run: `fishmanager look` [Default = None]''')
+    parser.add_argument('-k', '--keepdb',
+                        action= "store_true",
+                        help    = '[Optional] If selected, databases and intermediate files are not deleted')
 
-    parser.add_argument('-h',
-                        '--help',
-                        action='store_true',
-                        help='Show this help message and exit.' )
 
     return parser.parse_args()
 
@@ -103,29 +74,19 @@ def main():
 
     args  = getOpts()
 
-    if args.help:
-        print(cUsage())
-        exit()
+    fishfiles = TollCheck(path      = args.path,
+                          step      = "step1",
+                          branch    = args.branch)
 
-    fishfiles = SetEnvironment(args.adapters,
-                               args.forward ,
-                               args.reverse,
-                               args.path,
-                               args.ncpu)
-
-    fishtrim  = Trimmomatic(fishfiles.adapterpath,
-                            fishfiles.corenames,
-                            fishfiles.extentions,
-                            args.path,
-                            args.ncpu,
-                            args.illuminaclip,
-                            args.leading,
-                            args.trailing,
-                            args.sliding, 
-                            args.minlen)
-
-    fishfiles.mkdir()
-    fishfiles.mv()
+    fishtrim  = Trimmomatic(tc_class     = fishfiles,
+                            adapters     = args.adapters,
+                            threads      = args.ncpu,
+                            illuminaclip = args.illuminaclip,
+                            leading      = args.leading,
+                            trailing     = args.trailing,
+                            sliding      = args.sliding, 
+                            minlen       = args.minlen,
+                            keep         = args.keepdb)
     fishtrim.run()
 
 if __name__ == "__main__":

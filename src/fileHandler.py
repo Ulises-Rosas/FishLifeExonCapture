@@ -1,6 +1,7 @@
 import re
 import os
 import sys
+import glob
 import shutil
 import pickle
 import collections
@@ -8,19 +9,63 @@ from multiprocessing import Pool
 
 import fishlifeexoncapture
 
+BRANCHERR="""
+Other branchs detected
+Consider merge branchs first with:
+\n\t fishmanager merge -p %s\n
+or specify branch\n"""
+
+HIDDERR="""
+No metadata file found.
+Consider run: 
+\n\t fishmanager mkdir -p %s\n
+Over your fastq files in order to
+generate the metadata file\n"""
+
 class TollCheck:
 
     def __init__(self, 
                  path = None,
                  pattern = None,
                  step = None,
-                 extentions = None):
+                 extentions = None,
+                 branch = None):
 
-        self.hiddenfile = os.path.join(path, ".ignoreFishLifeExonCapture")
+
+        self.branch = branch
+
+        # self.hiddenfile = os.path.join(path, ".ignoreFishLifeExonCapture")
         self.step = step
         self.extentions = extentions
         self.path = path
         self.pattern = pattern
+        self.branch  = branch
+
+    @property
+    def hiddenfile(self):
+
+        METADATAFILE = ".ignoreFishLifeExonCapture_part"
+
+        if self.branch is not None:
+
+            header = METADATAFILE + self.branch
+            file   = os.path.join(self.path, header)
+
+            if not os.path.exists(file):
+                sys.stderr.write( "\n Branch '{}' does not exist\n".format(self.branch) )
+                exit()
+        else:
+
+            branch_files = os.path.join(self.path, METADATAFILE + "*")
+
+            if glob.glob(branch_files):
+                sys.stderr.write(BRANCHERR % self.path)
+                exit()
+
+            header = ".ignoreFishLifeExonCapture"
+            file   = os.path.join(self.path, header)
+
+        return file
 
     def __save_obj__(self, obj = None, name = None):
 
@@ -49,8 +94,9 @@ class TollCheck:
             return self.__load_info__(self.hiddenfile)
 
         except FileNotFoundError:
-            return None
-
+            sys.stderr.write(HIDDERR % self.path)
+            exit()
+            
     def creatmetadata(self, obj):
 
         if not isinstance(obj, dict):

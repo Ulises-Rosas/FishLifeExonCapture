@@ -48,8 +48,18 @@ def getOpts():
     parser.add_argument('-m', '--memory',
                         metavar = "",
                         type    = int,
-                        default = 1,
-                        help    = '[Optional] memory on gigabytes [Default = 1Gb]')
+                        default = 2,
+                        help    = '[Optional] memory on gigabytes [Default = 2Gb]')
+    parser.add_argument('-b', '--branch',
+                        metavar = "",
+                        type    = str,
+                        default = None,
+                        help    = '''[Optional] If metadata was splitted
+                                     with `fishmanager split X`, where X is 
+                                     a number, this option
+                                     let to work only in a specific branch.
+                                     To have more details about branch scheme
+                                     run: `fishmanager look` [Default = None]''')
     parser.add_argument('-k', '--keepdb',
                         action= "store_true",
                         help    = '[Optional] If seleceted, databases and intermediate files are')
@@ -58,8 +68,9 @@ def getOpts():
 def main():
     args = getOpts()
 
-    fishfiles = TollCheck(path    = args.path,
-                          step    = "step4")
+    fishfiles = TollCheck(path   = args.path,
+                          step   = "step4",
+                          branch = args.branch)
 
     atram     = aTRAM(tc_class   = fishfiles,
                       threads    = args.threads,

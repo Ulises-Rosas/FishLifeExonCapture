@@ -10,21 +10,21 @@ from multiprocessing import Pool
 
 import fishlifedat
 
+
 from fishlifeexoncapture.fileHandler import TollCheck
 from fishlifeexoncapture.utils       import runShell, addpath, getdict, check_reqs
 
 class Trimmomatic:
     def __init__(self,
-                adapters   = None,
-                corenames  = None,
-                extentions = None,
-                path       = None,
-                threads      = None,
+                tc_class = None,
+                adapters = None,
+                threads  = None,
                 illuminaclip = None,
                 leading  = None,
                 trailing = None,
                 sliding  = None,
-                minlen   = None):
+                minlen   = None,
+                keep     = False):
         """
         java -jar $jarfile
          PE
@@ -43,53 +43,104 @@ class Trimmomatic:
           SLIDINGWINDOW:4:15
           MINLEN:31 > ../$directory.step1.trimming.txt 2>&1;
         """
-        self.step       = "step1"
+        # from fishlifeexoncapture.wrappers import Trimmomatic
+        # self = Trimmomatic
 
-        self.path       = path
-        self.corenames  = corenames
-        self.extentions = extentions
+        self.tc_class  = tc_class
+        self.corenames = tc_class.pickleIt
+        self.path      = tc_class.path
+        self.step      = tc_class.step
 
-        self.firstcall = ["trimmomatic", "PE", "-threads", str(threads), "-phred33", "-quiet"]
-        self.thirdcall = ["ILLUMINACLIP:%s:%s" % (adapters, ":".join([str(i) for i in illuminaclip])),
-                          "LEADING:%s"  % leading,
-                          "TRAILING:%s" % trailing,
-                          "SLIDINGWINDOW:%s" % ":".join([str(i) for i in sliding]),
-                          "MINLEN:%s"   % minlen]
+        self.adapters = adapters
+        self.keep     = keep
+
+        self.illuminaclip = ":".join(map(str, illuminaclip))
+        self.leading      = "LEADING:%s"  % leading
+        self.trailing     = "TRAILING:%s" % trailing
+        self.sliding      = "SLIDINGWINDOW:%s" % ":".join(map(str, sliding))
+        self.minlen       = "MINLEN:%s"   % minlen
+        self.firstcall    = ["trimmomatic", "PE", "-threads", str(threads), "-phred33", "-quiet"]
+
+    @property
+    def adapterpath(self):
+        import fishlifeexoncapture
+
+        if self.adapters is None:
+            packpath = fishlifeexoncapture.__path__[0]
+            return os.path.join(packpath, "data", "TrueSeq3-PE.fa")
+
+        else:
+            return self.adapters
+
+    @property
+    def thirdcall(self):
+        return [
+            "ILLUMINACLIP:%s:%s" % (self.adapterpath, self.illuminaclip),
+            self.leading ,
+            self.trailing,
+            self.sliding ,
+            self.minlen
+            ]
+
+    @property
+    def check_corenames(self):
+
+        names = self.corenames
+        # names  = tc_class.pickleIt
+        out   = []
+
+        for k,v in names.items():
+            islabel = v.__contains__(self.step)
+            # islabel = v.__contains__(step)
+            
+            if not islabel:
+                # stem = ospj(self.path, k)
+                # stem = ospj(path, k)
+                out.append( (k, v['extentions']) )
+                
+        return out
 
     @property
     def listofopts(self):
-        fpat, rpat   = self.extentions
 
-        poextentions = [fpat, 
-                        rpat,
-                        "_paired"   + fpat,
-                        "_unpaired" + fpat,
-                        "_paired"   + rpat,
-                        "_unpaired" + rpat ]
         out = {}
-        for c in self.corenames:
-            secondcall = addpath(self.path, c, poextentions)
-            out[c]     = self.firstcall + secondcall + self.thirdcall
+        for core, extention in self.check_corenames:
 
+            fpat, rpat  = extention
+            poextentions = [
+                            fpat, 
+                            rpat,
+                            "_paired"   + fpat,
+                            "_unpaired" + fpat,
+                            "_paired"   + rpat,
+                            "_unpaired" + rpat 
+                            ]
+
+            secondcall = addpath(self.path, core, poextentions)
+            out[core]  = {
+                'args'     : self.firstcall + secondcall + self.thirdcall,
+                'deletion' : addpath(self.path, core, ["_unpaired" + fpat, "_unpaired" + rpat])
+                }
         return out
 
     def run(self):
-        tc = TollCheck(path = self.path, step =  self.step)
+        # tc = TollCheck(path = self.path, step = self.step)
+        for k, v in self.listofopts.items():
 
-        for k,v in self.listofopts.items():
+            runShell(v['args'])
 
-            if not tc.checked(k):
-                # print(v)
-                runShell(args = v)
-                tc.label(k)
+            if not self.keep:
+                for unpair in v['deletion']:
+                    if os.path.exists(unpair):
+                        os.remove(unpair)
+                    
+            self.tc_class.label(k)
 
 class samtools:
     
     def __init__(self,
-                 corenames = None,
-                 path      = None,
-                 threads   = None,
-                 step      = None):
+                 tc_class = None,
+                 threads  = None):
         """
         corname="Mormyridae_Marcusenius_sanagaensis_EPLATE_58_A05"
         stem=$corname/$corname
@@ -102,10 +153,14 @@ class samtools:
         samtools index $stem'.mapped.sorted.rmdup.bam';
         samtools bam2fq $stem'.mapped.sorted.rmdup.bam' > $stem'.rmdup.fastq';
         """
-        self.step = step
-        self.path = path
-        self.threads = threads
-        self.corenames = corenames
+
+        self.tc_class  = tc_class
+
+        self.step      = self.tc_class.step
+        self.path      = self.tc_class.path
+        self.corenames = self.tc_class.corenames
+
+        self.threads = threads        
 
         self.mapexonfile           = "map-exons-list.txt"
         self.memasterfasta         = "all_Master.fasta"
@@ -213,24 +268,15 @@ class samtools:
 
     def run_mapexons(self):
 
-        tc      = TollCheck(path = self.path, step = self.step)
-        elist   = self.mapexonlist
-        # DELETE THIS
-        # del_n = 30
-        # del_keys = list(elist.keys())[0:del_n]
-        # elist =  { del_i:elist[del_i] for del_i in del_keys }
-        # DELETE THIS
-        self.iter_mapping(tc, elist, self.memasterfasta)
+        self.iter_mapping(self.tc_class,
+                          self.mapexonlist, 
+                          self.memasterfasta)
         
     def run_mapexonsotophysi(self):
 
-        tc      = TollCheck(path = self.path, step = self.step)
-        elist   = self.mapexonotophysilist
-        # DELETE THIS
-        # ke,va = next(iter(elist.items()))
-        # elist = {ke: va}
-        # DELETE THIS
-        self.iter_mapping(tc, elist, self.memasterotophysifasta)        
+        self.iter_mapping(self.tc_class,
+                          self.mapexonotophysilist,
+                          self.memasterotophysifasta)        
 
     def run(self):
 
@@ -365,8 +411,13 @@ class aTRAM:
 
         self.int_reqs   = ["step2a", "step2b"]
         # defaulf fastq_global = *.fastq
-        self.preprocess = "atram_preprocessor.py -b {db_prefix} -t .  --cpus {threads} --mixed-ends"
-        ## ls *blast* > preprocess_files.txt; ## store file names into it and use it as boolean
+        self.preprocess = """atram_preprocessor.py\
+                             -b {db_prefix}\
+                             -t .\
+                             --cpus {threads}\
+                             --mixed-ends"""
+        ## ls *blast* > preprocess_files.txt; ## store
+        ## file names into it and use it as boolean
         self.atram      = """atram.py\
                              -b {db_prefix}\
                              -t .\

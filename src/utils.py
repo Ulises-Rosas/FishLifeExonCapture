@@ -52,6 +52,12 @@ def getdict(filename):
     for l in file:
         tmpl = l.strip().split()
         out[ tmpl[0] ] = tmpl[1:]
+
+    # DELETE THIS
+    # del_n = 10
+    # del_keys = list(out.keys())[0:del_n]
+    # out =  { del_i:out[del_i] for del_i in del_keys }
+    # DELETE THIS
     return out
 
 def check_reqs(requirements, labels, allvals = False):
