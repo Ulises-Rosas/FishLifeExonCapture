@@ -1,2 +1,0 @@
-import sys
-from fishlifeexoncapture.fileHandler import TollCheck

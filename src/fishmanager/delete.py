@@ -4,13 +4,25 @@ from fishlifeexoncapture.fileHandler import TollCheck
 
 def checkstep(step):
     if step is None:
-        sys.stdout.write("\n")
-        sys.stdout.write("Please, introduce an step\n")
+        sys.stdout.write("\nPlease, introduce an step\n")
         exit()
 
-def at(path, step):
+def at(path, step, branch):
     checkstep(step)
-    
-    fishfiles = TollCheck(path = path, step = step)
-    fishfiles.massivedeletion()
+
+    if branch is not None:
+
+        for b in branch:
+            fishfiles = TollCheck(path  = path, 
+                                 step   = step,
+                                 branch = b)
+            fishfiles.massivedeletion()
+    else:
+
+        fishfiles = TollCheck(path   = path,
+                              step   = step,
+                              branch = branch)
+        fishfiles.massivedeletion()
+
+
 

@@ -1,5 +1,8 @@
 
+import os
+import re
 import sys
+import glob
 from fishlifeexoncapture.fileHandler import TollCheck
 
 choices=[
@@ -14,10 +17,10 @@ choices=[
         "step5otophysi"
         ]
 
-def tometadata(path):
 
-    fishfiles = TollCheck(path = path)
-    mydict    =  fishfiles.pickleIt
+METADATAFILE = ".ignoreFishLifeExonCapture_part"
+
+def printdict(mydict):
 
     maxchar = max([len(i) for i in  mydict.keys()  ])
     
@@ -37,23 +40,82 @@ def tometadata(path):
             metadata[ksteps] += [k]
 
     sortkeys = sorted(metadata.items(),
-                      key = lambda kv: kv[0],
-                      reverse = True)
+                    key = lambda kv: kv[0],
+                    reverse = True)
 
     try:
         maxcharstep = len(sortkeys[0][0])
     except IndexError:
+        sys.stdout.write("Check your steps\n")
         exit()
 
-    fmt = "%-{}s | %s".format(maxchar)
+    out = []
 
-    sys.stdout.write("\n")
-    sys.stdout.write(fmt % ("Directory", "Steps"))
-    sys.stdout.write("\n%s-+-%s\n" % ('-'*maxchar, '-'*maxcharstep))
     for steps, core in sortkeys:
         for c in sorted(core):
-            sys.stdout.write( fmt % (c, steps) )
-            sys.stdout.write("\n")
+            out.append((c, steps))
 
-    sys.stdout.write("\n")
-    exit()
+    return (maxchar, maxcharstep, out)
+
+def tometadata(path, partition_list = None):
+
+    # path = "."
+    fishfiles = TollCheck(path = path)
+
+    if partition_list is not None:
+        partitions = []
+
+        for i in partition_list:
+            part_file = glob.glob(os.path.join(path, METADATAFILE + i))
+
+            if part_file:
+                partitions += part_file
+    else:
+        partitions = glob.glob(os.path.join(path, METADATAFILE + "*"))
+
+    proto_fmt  = "%-{}s | %-{}s\n"
+    proto_base =    "%s-+-%s\n"
+
+    if not partitions:
+        mydict = printdict(fishfiles.pickleIt)
+        dirmax, stepmax, values = mydict
+
+        fmt    = proto_fmt.format( dirmax, stepmax)
+        # header = proto_fmt % ("Directory", "Steps")
+        sys.stdout.write("\n")
+        sys.stdout.write( fmt % ("Directory", "Steps") )
+        sys.stdout.write( proto_base % ('-'*dirmax, '-'*stepmax) )
+
+        for cores_steps in values:
+            sys.stdout.write(  fmt % cores_steps )
+
+        sys.stdout.write("\n")
+
+    else:
+
+        dirmaxchar = []
+        stepmaxchar = []
+        df  =  {}
+
+        for f in partitions:
+            key = re.sub(".+_part(.+)", "\\1", f)
+
+            mydict = printdict( fishfiles.__load_info__(f) )
+            dirmax, stepmax, values = mydict
+
+            dirmaxchar.append( dirmax )
+            stepmaxchar.append( stepmax )
+            df.update({key:values})
+
+        dirmaxchar_s  = sorted(dirmaxchar , reverse = True)[0]
+        stepmaxchar_s = sorted(stepmaxchar, reverse = True)[0]
+        
+        fmt = ("%-{}s | " + proto_fmt).format(9, dirmaxchar_s, stepmaxchar_s)
+
+        sys.stdout.write("\n")
+        sys.stdout.write( fmt % ("Branch", "Directory", "Steps") )
+        sys.stdout.write( ("%s-+-" + proto_base) % ('-'*6, '-'*dirmaxchar_s, '-'*stepmaxchar_s) )
+        for part,cores_steps in df.items():
+            for cs in cores_steps:
+                sys.stdout.write( fmt % ( (part,) + cs ) )
+        sys.stdout.write("\n")
