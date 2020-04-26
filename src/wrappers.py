@@ -158,7 +158,7 @@ class samtools:
 
         self.step      = self.tc_class.step
         self.path      = self.tc_class.path
-        self.corenames = self.tc_class.corenames
+        self.corenames = self.tc_class.pickleIt
 
         self.threads = threads        
 
@@ -821,7 +821,6 @@ class Exonerate:
 
     def run(self, input = None):
         self.exoniterator(input)
-
 
 
 
