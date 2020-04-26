@@ -110,7 +110,7 @@ def tometadata(path, partition_list = None):
         dirmaxchar_s  = sorted(dirmaxchar , reverse = True)[0]
         stepmaxchar_s = sorted(stepmaxchar, reverse = True)[0]
         
-        fmt = ("%-{}s | " + proto_fmt).format(9, dirmaxchar_s, stepmaxchar_s)
+        fmt = ("%-{}s | " + proto_fmt).format(6, dirmaxchar_s, stepmaxchar_s)
 
         sys.stdout.write("\n")
         sys.stdout.write( fmt % ("Branch", "Directory", "Steps") )
