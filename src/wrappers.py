@@ -393,6 +393,7 @@ class aTRAM:
                  velvet     = None,
                  assambler  = None,
                  memory     = None,
+                 tmp_path   = None,
                  iterations = 5,
                  keep       = False):
 
@@ -408,26 +409,43 @@ class aTRAM:
         self.velvet     = velvet
         self.assambler  = assambler
         self.keep       = keep
+        self.tmp_path   = tmp_path
 
         self.int_reqs   = ["step2a", "step2b"]
-        # defaulf fastq_global = *.fastq
-        self.preprocess = """atram_preprocessor.py\
-                             -b {db_prefix}\
-                             -t .\
-                             --cpus {threads}\
-                             --mixed-ends"""
-        ## ls *blast* > preprocess_files.txt; ## store
-        ## file names into it and use it as boolean
-        self.atram      = """atram.py\
-                             -b {db_prefix}\
-                             -t .\
-                             -q {init_combi_fa}\
-                             -a {assambler}\
-                             -o {prefix}\
-                             -i {itera}\
-                             --log-level=error\
-                             --cpus {threads}\
-                             --max-memory {memory}"""
+
+    @property
+    def preprocess(self):
+        	
+        chg_str    = "atram_preprocessor.py  -b {db_prefix}"
+        static_str = """ -t {tmp_path}\
+                         --cpus {threads}\
+                         --mixed-ends""".format(
+                                    tmp_path  = self.tmp_path,
+                                    threads   = self.threads)
+
+        return chg_str + static_str
+
+    @property
+    def atram(self):
+
+        chg_str    = """atram.py\
+                      -b {db_prefix}\
+                      -q {init_combi_fa}\
+                      -o {prefix}"""
+        static_str = """ -t {tmp_path}  \
+                         -a {assambler}\
+                         -i {itera}\
+                         --log-level=error\
+                         --cpus {threads}""".format(
+                                        tmp_path  = self.tmp_path,
+                                        assambler = self.assambler,
+                                        itera     = self.iterations,
+                                        threads   = self.threads)
+
+        if self.memory is not None:
+            static_str += " --max-memory {}".format(self.memory)
+
+        return chg_str + static_str
 
     @property    
     def check_corenames(self):
@@ -472,13 +490,9 @@ class aTRAM:
                 continue
 
             db_prefix = ospj(i,c)
-
+            fastq_tar = [ospj(i, f) for f in fastqs]
             # preprocessing
-            runShell(
-                self.preprocess.format(db_prefix = db_prefix,
-                                        threads  = self.threads ).split() + 
-                [ospj(i, f) for f in fastqs]
-                )
+            runShell(self.preprocess.format(db_prefix = db_prefix).split() + fastq_tar)
 
             # atram
             for iii in initfas:
@@ -487,15 +501,11 @@ class aTRAM:
                     self.atram.format(
                         db_prefix     = db_prefix,
                         init_combi_fa = init_exon,
-                        itera         = self.iterations,
-                        threads       = self.threads,
-                        assambler     = self.assambler,
-                        memory        = self.memory,
                         prefix        = ospj(i, self.assambler)
                         ).split()
                     )
 
-            toshort = [ (c,s) for s in glob.glob( ospj(i, "velvet." + c + "*"))]
+            toshort = [ (c,s) for s in glob.glob( ospj(i, "%s." % self.assambler + c + "*"))]
 
             with Pool(processes = self.threads) as p:
                 [*p.map(self.rename, toshort)]
