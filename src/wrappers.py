@@ -12,7 +12,7 @@ import fishlifedat
 
 
 from fishlifeexoncapture.fileHandler import TollCheck
-from fishlifeexoncapture.utils       import runShell, addpath, getdict, check_reqs
+from fishlifeexoncapture.utils import runShell, addpath, getdict, check_reqs, countheaders
 
 class Trimmomatic:
     def __init__(self,
@@ -739,13 +739,6 @@ class Exonerate:
         from fishlifescript.filterExons import getoriented
         return getoriented( **kwargs)
 
-    def countheaders(self, file):
-
-        with open(file, 'r') as f:
-            mylist = f.readlines()
-
-        return len( [True for i in mylist if re.findall(">", i) ]  )
-
     def protoexoniterator(self, core_filename):
 
         core, filename = core_filename
@@ -779,7 +772,7 @@ class Exonerate:
 
         runShell(cmd2.split())
 
-        count = self.countheaders(cdhitest_out)
+        count = countheaders(cdhitest_out)
 
         if not self.keep:
             os.remove(exonera_out)
@@ -823,7 +816,72 @@ class Exonerate:
         self.exoniterator(input)
 
 
+class Flankfiltering:
+    """
+    for f in *cdhit:
+        filterFlanks.py -f $f.exonerate.fasta\
+                        -l $f\
+                        -o $f.flanks\
+                        -t $directory;
+        cd-hit-est -i $f -o $f.flanks -c 0.97;
+    """
+    def __init__(self,
+                 tc_class = None,
+                 identity = None,
+                 threads  = None,
+                 fasta    = None,
+                 memory   = None ):
+
+        self.int_reqs  = [
+                          "step5percomorph",
+                          "step5elopomorph",
+                          "step5osteoglossomorph",
+                          "step5otophysi"
+                          ]
+
+        self.tc_class  = tc_class
+        self.corenames = self.tc_class.pickleIt
+        self.path      = self.tc_class.path
+        self.step      = self.tc_class.step
 
 
+        self.identity = identity
+        self.fasta    = fasta
+        self.threads  = threads
+        self.memory   = memory
 
 
+    @property
+    def check_corenames(self):
+
+        names = self.corenames
+        out   = []
+        for k,v in names.items():
+
+            isreqs  = check_reqs(self.int_reqs, v)
+            islabel = v.__contains__(self.step)
+
+            if isreqs and not islabel:
+                out += [(k, ospj(self.path, k))]
+
+        return out
+
+    def protoexoniterator(self, name):
+        print(name)
+
+    def exoniterator(self):
+
+        if not self.check_corenames:
+            exit()
+
+        # out = []
+        patt = self.fasta
+        for core, path in self.check_corenames:
+
+            flanks = [ospj(path, i) for i in os.listdir(path) if re.findall(patt, i)]
+
+            with Pool(processes = self.threads) as p:
+                dir_files = [*p.map(self.protoexoniterator, flanks)]
+
+    def run(self):
+        self.exoniterator()
