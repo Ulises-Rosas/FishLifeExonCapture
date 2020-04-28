@@ -50,6 +50,11 @@ def getOpts():
                         type    = int,
                         default = 2,
                         help    = '[Optional] memory on gigabytes [Default = 2Gb]')
+    parser.add_argument('-t', '--tmp_dir',
+                        metavar = "",
+                        type    = str,
+                        default = ".",
+                        help    = '[Optional] Path for temporal directory [Default = "."]')
     parser.add_argument('-b', '--branch',
                         metavar = "",
                         type    = str,
@@ -79,6 +84,7 @@ def main():
                       iterations = args.iterations,
                       assambler  = args.assambler,
                       memory     = args.memory,
+                      tmp_path   = args.tmp_dir,
                       keep       = args.keepdb)
 
     atram.run()
