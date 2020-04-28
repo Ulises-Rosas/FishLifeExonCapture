@@ -115,7 +115,8 @@ def tometadata(path, partition_list = None):
         sys.stdout.write("\n")
         sys.stdout.write( fmt % ("Branch", "Directory", "Steps") )
         sys.stdout.write( ("%s-+-" + proto_base) % ('-'*6, '-'*dirmaxchar_s, '-'*stepmaxchar_s) )
-        for part,cores_steps in df.items():
-            for cs in cores_steps:
+
+        for part in sorted(df.keys()):
+            for cs in df[part]:
                 sys.stdout.write( fmt % ( (part,) + cs ) )
         sys.stdout.write("\n")
