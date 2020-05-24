@@ -65,6 +65,12 @@ def getOpts():
                                      let to work only in a specific branch.
                                      To have more details about branch scheme
                                      run: `fishmanager look` [Default = None]''')
+    parser.add_argument('-r', '--run_at',
+                        metavar = "",
+                        type    = str,
+                        default = None,
+                        help    = '''[Optional] run analyses into a specific directory.
+                                     Added to deal with clusters permissions [Default = None]''')
     parser.add_argument('-k', '--keepdb',
                         action= "store_true",
                         help    = '[Optional] If seleceted, databases and intermediate files are')
@@ -85,7 +91,8 @@ def main():
                       assambler  = args.assambler,
                       memory     = args.memory,
                       tmp_path   = args.tmp_dir,
-                      keep       = args.keepdb)
+                      keep       = args.keepdb,
+                      runat      = args.run_at)
 
     atram.run()
 

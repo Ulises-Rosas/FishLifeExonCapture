@@ -1,4 +1,5 @@
 import os
+import shutil
 import pickle
 import subprocess
 import fishlifedat
@@ -124,3 +125,21 @@ def getexons(tmp_dir):
 
     return out
 
+def countheaders(file):
+
+    with open(file, 'r') as f:
+        mylist = f.readlines()
+
+    return len( [True for i in mylist if re.findall(">", i) ]  )
+
+def forcemove(file, destination):
+    """
+    move file even if this one already
+    exists at the distination directory
+    """
+    destfile = os.path.join(destination, os.path.basename(file))
+
+    if os.path.exists(destfile):
+        os.remove(destfile)
+
+    shutil.move(file, destination)

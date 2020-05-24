@@ -47,7 +47,8 @@ setup(
             'map-exons-otophysi      = fishlifeexoncapture.step2b:main',
             'initialVelvet           = fishlifeexoncapture.step3:main',
             'runaTRAM                = fishlifeexoncapture.step4:main',
-            'ExonFiltering           = fishlifeexoncapture.step5:main'
+            'ExonFiltering           = fishlifeexoncapture.step5:main',
+            'FlankFiltering          = fishlifeexoncapture.step5b:main'
             ]
     },
     install_requires = dependencies,

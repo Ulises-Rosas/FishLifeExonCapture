@@ -12,7 +12,7 @@ import fishlifedat
 
 
 from fishlifeexoncapture.fileHandler import TollCheck
-from fishlifeexoncapture.utils import runShell, addpath, getdict, check_reqs, countheaders
+from fishlifeexoncapture.utils import runShell, addpath, getdict, check_reqs, countheaders, forcemove
 
 class Trimmomatic:
     def __init__(self,
@@ -395,7 +395,8 @@ class aTRAM:
                  memory     = None,
                  tmp_path   = None,
                  iterations = 5,
-                 keep       = False):
+                 keep       = False,
+                 runat      = None):
 
         self.tc_class   = tc_class
         self.corenames  = tc_class.pickleIt
@@ -410,18 +411,21 @@ class aTRAM:
         self.assambler  = assambler
         self.keep       = keep
         self.tmp_path   = tmp_path
+        self.runat      = runat
+        self.outpatt    = ".filtered_contigs.fasta$"
+
 
         self.int_reqs   = ["step2a", "step2b"]
 
     @property
     def preprocess(self):
         	
-        chg_str    = "atram_preprocessor.py  -b {db_prefix}"
+        chg_str    = "atram_preprocessor.py -b {db_prefix}"
         static_str = """ -t {tmp_path}\
                          --cpus {threads}\
                          --mixed-ends""".format(
-                                    tmp_path  = self.tmp_path,
-                                    threads   = self.threads)
+                            tmp_path  = self.tmp_path,
+                            threads   = self.threads)
 
         return chg_str + static_str
 
@@ -436,14 +440,13 @@ class aTRAM:
                          -a {assambler}\
                          -i {itera}\
                          --log-level=error\
-                         --cpus {threads}""".format(
-                                        tmp_path  = self.tmp_path,
-                                        assambler = self.assambler,
-                                        itera     = self.iterations,
-                                        threads   = self.threads)
-
-        if self.memory is not None:
-            static_str += " --max-memory {}".format(self.memory)
+                         --cpus {threads}\
+                         --max-memory {memory}""".format(
+                                    tmp_path  = self.tmp_path,
+                                    assambler = self.assambler,
+                                    itera     = self.iterations,
+                                    threads   = self.threads,
+                                    memory    = self.memory)
 
         return chg_str + static_str
 
@@ -462,7 +465,7 @@ class aTRAM:
 
         return out
 
-    def rename(self, name_info):
+    def moveRunAt(self, name_info):
 
         core, name = name_info
         if re.findall( "{0}_{0}".format(core), name ):
@@ -470,8 +473,35 @@ class aTRAM:
 
             try:
                 os.rename(name, outname)
+
+                if self.runat is not None:
+
+                    if re.findall(self.outpatt, outname):
+
+                        forcemove(outname, ospj(self.path, core))
+
             except  FileExistsError:
                 pass
+
+    def addPathRunAt(self, file_tuple):
+
+        core,path,file = file_tuple
+        joinfile       = ospj(path, file)
+
+        if self.runat is not None:
+            # new dir inside
+            # the self.runat 
+            # directory
+            newCoreLoc = ospj(self.runat, core)
+
+            if not os.path.isdir(newCoreLoc):
+                os.mkdir(newCoreLoc)
+
+            shutil.copy(joinfile, newCoreLoc)
+
+            return ospj(newCoreLoc, file)
+        else:
+            return joinfile
 
     def run(self):
 
@@ -480,49 +510,73 @@ class aTRAM:
             # sys.stdout.write("No files found\n")
             exit()
             
-        for c, i in self.check_corenames:
+        for core,path in self.check_corenames:
 
-            fastqs  = [ii for ii in os.listdir(i) if re.findall(self.fastq, ii)]
-            initfas = [ii for ii in os.listdir(i) if re.findall(self.velvet, ii)]
+            fastqs  = [(core,path,f) for f in os.listdir(path) if re.findall(self.fastq , f)]
+            initfas = [(core,path,f) for f in os.listdir(path) if re.findall(self.velvet, f)]
 
             if not fastqs or not initfas:
                 self.tc_class.label(c)
                 continue
 
-            db_prefix = ospj(i,c)
-            fastq_tar = [ospj(i, f) for f in fastqs]
+            with Pool(processes = self.threads) as p:
+                # move files if there 
+                # a given directory at
+                # self.runat variable
+                fastq_tar = p.map(self.addPathRunAt, fastqs )
+                initfas   = p.map(self.addPathRunAt, initfas)
+
+
+            if self.runat is not None:
+                path = ospj(self.runat, core)
+                
+            db_prefix = ospj(path,core)
+
             # preprocessing
-            runShell(self.preprocess.format(db_prefix = db_prefix).split() + fastq_tar)
+            cmdpre = self.preprocess.format(db_prefix = db_prefix).split() + fastq_tar
+            # print(cmdpre)
+            runShell(cmdpre)
 
             # atram
-            for iii in initfas:
-                init_exon = ospj(i,iii)
-                runShell(
-                    self.atram.format(
-                        db_prefix     = db_prefix,
-                        init_combi_fa = init_exon,
-                        prefix        = ospj(i, self.assambler)
-                        ).split()
-                    )
+            for exon in initfas:
+                # init_exon = ospj(path, exon)
+                cmdatram  = self.atram.format(
+                                    db_prefix     = db_prefix,
+                                    init_combi_fa = exon,
+                                    prefix        = ospj(path, self.assambler)
+                                    ).split()
 
-            toshort = [ (c,s) for s in glob.glob( ospj(i, "%s." % self.assambler + c + "*"))]
+                # print(cmdatram)
+                runShell(cmdatram)
+
+            toshort = [(core,s) for s in glob.glob(ospj( path, "%s.%s" % (self.assambler, core + "*") ))]
 
             with Pool(processes = self.threads) as p:
-                [*p.map(self.rename, toshort)]
+                # it also moves files
+                # if self.runat variable
+                # is provided
+                [*p.map(self.moveRunAt, toshort)]
 
-            
-            if not self.keep:
-                blasts  = glob.glob( ospj(i, "*blast*"))
-                sqlite  = glob.glob( ospj(i, "*sqlite*"))
-                logs    = glob.glob( ospj(i, "*.atram.log"))
-                prelogs = glob.glob( ospj(i, "*.atram_preprocessor.log"))
-                allcont = glob.glob( ospj(i, "*.all_contigs.fasta"))
+
+            if self.runat is None:
+
+                if not self.keep:
+                    blasts  = glob.glob( ospj(path, "*blast*"))
+                    sqlite  = glob.glob( ospj(path, "*sqlite*"))
+                    logs    = glob.glob( ospj(path, "*.atram.log"))
+                    prelogs = glob.glob( ospj(path, "*.atram_preprocessor.log"))
+
+
+                    allcont = glob.glob( ospj(path, "*.all_contigs.fasta"))
+                    
+                    to_rm = blasts + sqlite + logs + prelogs + allcont
+
+                    with Pool(processes = self.threads) as p:
+                        [*p.map(os.remove, to_rm)]
+
+            else:
+                shutil.rmtree(path)
                 
-                to_rm = blasts + sqlite + logs + prelogs + allcont
-
-                with Pool(processes = self.threads) as p:
-                    [*p.map(os.remove, to_rm)]
-
             self.tc_class.label(c)
             
 class Cdhit:
