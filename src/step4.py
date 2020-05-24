@@ -50,7 +50,7 @@ def getOpts():
                         help    = '[Optional] number of cpus [Default = 1]')
     parser.add_argument('-m', '--memory',
                         metavar = "",
-                        type    = float,
+                        type    = int,
                         default = default_mem,
                         help    = '[Optional] Max. memory on gigabytes [Default = %s]' % default_mem)
     parser.add_argument('-t', '--tmp_dir',
