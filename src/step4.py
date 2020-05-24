@@ -5,6 +5,9 @@ import argparse
 
 from fishlifeexoncapture.fileHandler import TollCheck
 from fishlifeexoncapture.wrappers    import aTRAM
+from fishlifeexoncapture.utils       import taken_mem
+
+default_mem = taken_mem(part = 0.75)
 
 def getOpts():
 
@@ -47,9 +50,9 @@ def getOpts():
                         help    = '[Optional] number of cpus [Default = 1]')
     parser.add_argument('-m', '--memory',
                         metavar = "",
-                        type    = int,
-                        default = 2,
-                        help    = '[Optional] memory on gigabytes [Default = 2Gb]')
+                        type    = float,
+                        default = default_mem,
+                        help    = '[Optional] Max. memory on gigabytes [Default = %s]' % default_mem)
     parser.add_argument('-t', '--tmp_dir',
                         metavar = "",
                         type    = str,

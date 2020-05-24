@@ -1,6 +1,7 @@
 import os
 import shutil
 import pickle
+import psutil
 import subprocess
 import fishlifedat
 
@@ -55,9 +56,9 @@ def getdict(filename):
         out[ tmpl[0] ] = tmpl[1:]
 
     # DELETE THIS
-    # del_n = 10
-    # del_keys = list(out.keys())[0:del_n]
-    # out =  { del_i:out[del_i] for del_i in del_keys }
+    del_n = 10
+    del_keys = list(out.keys())[0:del_n]
+    out =  { del_i:out[del_i] for del_i in del_keys }
     # DELETE THIS
     return out
 
@@ -143,3 +144,9 @@ def forcemove(file, destination):
         os.remove(destfile)
 
     shutil.move(file, destination)
+
+def taken_mem(part = 0.75):
+    # default memory
+    totalmem = psutil.virtual_memory().total/(1024**3)
+
+    return int(part*totalmem)
