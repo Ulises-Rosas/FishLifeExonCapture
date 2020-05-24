@@ -549,21 +549,6 @@ class aTRAM:
                 runShell(cmdatram)
 
             toshort = [(core,s) for s in glob.glob(ospj( path, "%s.%s" % (self.assambler, core + "*") ))]
-            #print(cmdpre)
-            runShell(cmdpre)
-
-            # atram
-            for iii in initfas:
-                init_exon = ospj(i,iii)
-                cmdatram  = self.atram.format(
-                                db_prefix     = db_prefix,
-                                init_combi_fa = init_exon,
-                                prefix        = ospj(i, self.assambler)
-                                ).split()
-                #print(cmdatram)
-                runShell(cmdatram)                    
-
-            toshort = [ (c,s) for s in glob.glob( ospj(i, "%s." % self.assambler + c + "*"))]
 
             with Pool(processes = self.threads) as p:
                 # it also moves files
@@ -591,7 +576,7 @@ class aTRAM:
             else:
                 shutil.rmtree(path)
                 
-            self.tc_class.label(c)
+            self.tc_class.label(core)
             
 class Cdhit:
     """wrapper for ch-hit-est"""
