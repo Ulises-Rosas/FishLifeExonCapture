@@ -435,15 +435,15 @@ class aTRAM:
         static_str = """ -t {tmp_path}  \
                          -a {assambler}\
                          -i {itera}\
-                         --log-level=error\
-                         --cpus {threads}""".format(
-                                        tmp_path  = self.tmp_path,
-                                        assambler = self.assambler,
-                                        itera     = self.iterations,
-                                        threads   = self.threads)
-
-        if self.memory is not None:
-            static_str += " --max-memory {}".format(self.memory)
+                         --log-level=info --keep-temp-dir\
+                         --cpus {threads}\
+                         --max-memory {memory}""".format(
+                                    tmp_path  = self.tmp_path,
+                                    assambler = self.assambler,
+                                    itera     = self.iterations,
+                                    threads   = self.threads,
+                                    memory    = self.memory
+                                    )
 
         return chg_str + static_str
 
@@ -492,18 +492,20 @@ class aTRAM:
             db_prefix = ospj(i,c)
             fastq_tar = [ospj(i, f) for f in fastqs]
             # preprocessing
-            runShell(self.preprocess.format(db_prefix = db_prefix).split() + fastq_tar)
+            cmdpre = self.preprocess.format(db_prefix = db_prefix).split() + fastq_tar
+            #print(cmdpre)
+            runShell(cmdpre)
 
             # atram
             for iii in initfas:
                 init_exon = ospj(i,iii)
-                runShell(
-                    self.atram.format(
-                        db_prefix     = db_prefix,
-                        init_combi_fa = init_exon,
-                        prefix        = ospj(i, self.assambler)
-                        ).split()
-                    )
+                cmdatram  = self.atram.format(
+                                db_prefix     = db_prefix,
+                                init_combi_fa = init_exon,
+                                prefix        = ospj(i, self.assambler)
+                                ).split()
+                #print(cmdatram)
+                runShell(cmdatram)                    
 
             toshort = [ (c,s) for s in glob.glob( ospj(i, "%s." % self.assambler + c + "*"))]
 

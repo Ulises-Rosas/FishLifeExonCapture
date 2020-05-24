@@ -5,7 +5,8 @@ from distutils.core import setup
 
 # TODO: reduce amount of dependencies for future versions
 dependencies = [
-                "biopython"
+                "biopython",
+                "psutil" # get mem step4
                 ]
 
 
