@@ -508,7 +508,14 @@ class aTRAM:
             # sys.stdout.write("\n")
             # sys.stdout.write("No files found\n")
             exit()
-            
+
+        # Experimental
+        if self.runat is not None:
+            ### requested by C1 staff
+            getstripes = "lfs setstripe {} -c 1".format(self.path)
+            runShell( getstripes.split() )
+        # Experimental
+
         for core,path in self.check_corenames:
 
             fastqs  = [(core,path,f) for f in os.listdir(path) if re.findall(self.fastq , f)]
