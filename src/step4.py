@@ -53,11 +53,11 @@ def getOpts():
                         type    = int,
                         default = default_mem,
                         help    = '[Optional] Max. memory on gigabytes [Default = %s]' % default_mem)
-    parser.add_argument('-t', '--tmp_dir',
-                        metavar = "",
-                        type    = str,
-                        default = ".",
-                        help    = '[Optional] Path for temporal directory [Default = "."]')
+    # parser.add_argument('-t', '--tmp_dir',
+    #                     metavar = "",
+    #                     type    = str,
+    #                     default = ".",
+    #                     help    = '[Optional] Path for temporal directory [Default = "."]')
     parser.add_argument('-b', '--branch',
                         metavar = "",
                         type    = str,
@@ -93,7 +93,7 @@ def main():
                       iterations = args.iterations,
                       assambler  = args.assambler,
                       memory     = args.memory,
-                      tmp_path   = args.tmp_dir,
+                      # tmp_path   = args.tmp_dir,
                       keep       = args.keepdb,
                       runat      = args.run_at)
 

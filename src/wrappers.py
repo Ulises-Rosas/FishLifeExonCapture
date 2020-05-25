@@ -393,7 +393,7 @@ class aTRAM:
                  velvet     = None,
                  assambler  = None,
                  memory     = None,
-                 tmp_path   = None,
+                 # tmp_path   = None,
                  iterations = 5,
                  keep       = False,
                  runat      = None):
@@ -410,12 +410,17 @@ class aTRAM:
         self.velvet     = velvet
         self.assambler  = assambler
         self.keep       = keep
-        self.tmp_path   = tmp_path
+        # self.tmp_path   = tmp_path
         self.runat      = runat
         self.outpatt    = ".filtered_contigs.fasta$"
 
 
         self.int_reqs   = ["step2a", "step2b"]
+
+    @property
+    def tmp_path(self):
+
+        return self.path if not self.runat else self.runat
 
     @property
     def preprocess(self):
@@ -511,9 +516,10 @@ class aTRAM:
 
         # Experimental
         if self.runat is not None:
-            ### requested by C1 staff
-            getstripes = "lfs setstripe {} -c 1".format(self.path)
-            runShell( getstripes.split() )
+            if re.findall("linux", sys.platform):
+                ### requested by C1 staff    
+                getstripes = "lfs setstripe {} -c 1".format(self.path)
+                runShell( getstripes.split() )
         # Experimental
 
         for core,path in self.check_corenames:
