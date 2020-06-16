@@ -7,7 +7,7 @@ from fishlifeexoncapture.fileHandler import TollCheck
 from fishlifeexoncapture.wrappers    import aTRAM
 from fishlifeexoncapture.utils       import taken_mem
 
-default_mem = taken_mem(part = 0.75)
+DEFAULT_MEM = taken_mem(part = 0.95)
 
 def getOpts():
 
@@ -30,8 +30,8 @@ def getOpts():
     parser.add_argument('-v', '--velvetout',
                         metavar = "",
                         type    = str,
-                        default = ".initial.combined.fa$",
-                        help    = '[Optional] Regex pattern for initial velvet output (see Step 3) [Default = ".initial.combined.fa$"]')
+                        default = ".initialVelvet$",
+                        help    = '[Optional] Regex pattern for initial velvet output (see Step 3) [Default = ".initialVelvet$"]')
     parser.add_argument('-a', '--assambler',
                         choices= ["velvet", "trinity"],
                         metavar = "",
@@ -51,13 +51,8 @@ def getOpts():
     parser.add_argument('-m', '--memory',
                         metavar = "",
                         type    = int,
-                        default = default_mem,
-                        help    = '[Optional] Max. memory on gigabytes [Default = %s]' % default_mem)
-    # parser.add_argument('-t', '--tmp_dir',
-    #                     metavar = "",
-    #                     type    = str,
-    #                     default = ".",
-    #                     help    = '[Optional] Path for temporal directory [Default = "."]')
+                        default = DEFAULT_MEM,
+                        help    = '[Optional] Max. memory on gigabytes [Default = %s]' % DEFAULT_MEM)
     parser.add_argument('-b', '--branch',
                         metavar = "",
                         type    = str,
@@ -93,7 +88,6 @@ def main():
                       iterations = args.iterations,
                       assambler  = args.assambler,
                       memory     = args.memory,
-                      # tmp_path   = args.tmp_dir,
                       keep       = args.keepdb,
                       runat      = args.run_at)
 

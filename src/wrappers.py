@@ -331,7 +331,7 @@ class Velvet:
 
             if os.path.getsize(contigs_f):
                 self.writeLong(fasta  = contigs_f,
-                               output = "{file}.initial.combined.fa".format(file = name) )
+                               output = "{file}.initialVelvet".format(file = name) )
 
             shutil.rmtree(out_dirvelvet)
         else:
@@ -393,7 +393,6 @@ class aTRAM:
                  velvet     = None,
                  assambler  = None,
                  memory     = None,
-                 # tmp_path   = None,
                  iterations = 5,
                  keep       = False,
                  runat      = None):
@@ -412,7 +411,7 @@ class aTRAM:
         self.keep       = keep
         # self.tmp_path   = tmp_path
         self.runat      = runat
-        self.outpatt    = ".filtered_contigs.fasta$"
+        # self.outpatt    = ".filtered_contigs.fasta$"
 
 
         self.int_reqs   = ["step2a", "step2b"]
@@ -474,13 +473,14 @@ class aTRAM:
         core, name = name_info
         if re.findall( "{0}_{0}".format(core), name ):
             outname = name.replace(  "{0}_{0}".format(core), core )
+            outname = outname.replace("filtered_contigs.fasta", "initialVelvet.atram")
 
             try:
                 os.rename(name, outname)
 
                 if self.runat is not None:
 
-                    if re.findall(self.outpatt, outname):
+                    if re.findall("atram$", outname):
 
                         forcemove(outname, ospj(self.path, core))
 
@@ -528,7 +528,7 @@ class aTRAM:
             initfas = [(core,path,f) for f in os.listdir(path) if re.findall(self.velvet, f)]
 
             if not fastqs or not initfas:
-                self.tc_class.label(c)
+                self.tc_class.label(core)
                 continue
 
             with Pool(processes = self.threads) as p:
@@ -709,9 +709,9 @@ class Exonerate:
         self.processed = []
         self.maindir   = ""
         # often repeated extentions
-        self.extentions = (".exonerate.fasta",
-                           ".exonerateMito.fasta",
-                           ".exonerate_filtered.fa")
+        self.extentions = (".exonerate",
+                           ".exonerateMito",
+                           ".cdhit_o")
         
         self.exonerate = """
             exonerate --model coding2genome\
@@ -784,7 +784,7 @@ class Exonerate:
 
     def checkAndCreateFile(self, name, content):
 
-        completename = os.path.join(self.hiddendir, name)
+        completename = ospj(self.hiddendir, name)
 
         if not os.path.exists(completename):
             
@@ -828,9 +828,13 @@ class Exonerate:
             return None
 
         created_file = self.checkAndCreateFile(exonname[1], content)
+        # ./.tmp_ReadingFramesPercomorph/E0013.fasta
         exonera_out  = filename + nuclex if exonname[0] == 'nucl' else filename + mitoex
+        # .cdhit.exonerateMito
         filter_out   = exonera_out + filex
-        cdhitest_out = filename + ".exonerate.final_contigs.fa"
+        # .cdhit.exonerateMito.cdhit_o
+        cdhitest_out = filename + ".exonerate.cdhit"
+        # .cdhit.exonerate.cdhit
 
         cmd = self.exonerate.format(
                     cdhit_out = filename,
@@ -851,7 +855,7 @@ class Exonerate:
         count = countheaders(cdhitest_out)
 
         if not self.keep:
-            os.remove(exonera_out)
+            # os.remove(exonera_out)
             os.remove(filter_out)
             os.remove(cdhitest_out + ".clstr")
             os.remove(filename     + ".clstr")
@@ -860,6 +864,8 @@ class Exonerate:
             return "%s,%s\n" % (exonname[1].replace(".fasta", ""), "failed")
 
         elif count == 0:
+            os.remove(filename)
+            os.remove(exonera_out)
             os.remove(cdhitest_out)
             return None
 
@@ -890,7 +896,6 @@ class Exonerate:
 
     def run(self, input = None):
         self.exoniterator(input)
-
 
 class Flankfiltering:
     """
@@ -941,6 +946,10 @@ class Flankfiltering:
                 out += [(k, ospj(self.path, k))]
 
         return out
+
+    def matchExonerateCdhit(self, **kwargs):
+        from fishlifescript.filterFlanks import matchExonerateCdhit
+        return matchExonerateCdhit( **kwargs )
 
     def protoexoniterator(self, name):
         print(name)

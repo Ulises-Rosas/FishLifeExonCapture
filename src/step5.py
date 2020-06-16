@@ -6,6 +6,10 @@ import argparse
 
 from fishlifeexoncapture.fileHandler import TollCheck
 from fishlifeexoncapture.wrappers    import Cdhit, Exonerate
+from fishlifeexoncapture.utils       import taken_mem
+
+DEFAULT_MEM  = taken_mem(part = 0.95)
+FASTA_SUFFIX = ".atram$"
 
 def getOpts():
 
@@ -37,13 +41,13 @@ def getOpts():
     parser.add_argument('-m', '--memory',
                         metavar = "",
                         type    = int,
-                        default = 800,
-                        help    = '[Optional] Memory limit for the cd-hit-est in MB [Default = "800"]')
+                        default = DEFAULT_MEM,
+                        help    = '[Optional] Memory limit for the cd-hit-est in GB [Default = %s]' % DEFAULT_MEM)
     parser.add_argument('-f', '--fasta',
                         metavar = "",
                         type    = str,
-                        default = ".filtered_contigs.fasta$",
-                        help    = '[Optional] Regex pattern for filtered contings from aTRAM runs (step4) [Default = ".filtered_contigs.fasta$"]')
+                        default = FASTA_SUFFIX,
+                        help    = '[Optional] Regex pattern for filtered contings from aTRAM runs (step4) [Default = "%s"]' % FASTA_SUFFIX)
     parser.add_argument('-c', '--identity',
                         metavar = "",
                         type    = float,
@@ -74,11 +78,11 @@ def main():
     parser = getOpts()
     args   = parser.parse_args()
 
-    choices = {
-        "Percomorph": "step5percomorph",
-        "Elopomorph": "step5elopomorph",
-        "Osteoglossomorph": "step5osteoglossomorph",
-        "Otophysi": "step5otophysi"
+    choices = {  
+        "Percomorph"       : "step5percomorph",
+        "Elopomorph"       : "step5elopomorph",
+        "Osteoglossomorph" : "step5osteoglossomorph",
+        "Otophysi"         : "step5otophysi"
         }
 
     step = ""
@@ -99,12 +103,12 @@ def main():
                       identity = args.identity,
                       threads  = args.threads,
                       fasta    = args.fasta,
-                      memory   = args.memory)
+                      memory   = args.memory * 1024)
 
     exonerate = Exonerate(tc_class  = fishfiles, 
                           assambler = args.assambler,
                           threads   = args.threads,
-                          memory    = args.memory,
+                          memory    = args.memory * 1024,
                           checked_names = cdhitest.check_corenames,
                           identity   = cdhitest.identity - 0.01,
                           keep       = args.keepdb)

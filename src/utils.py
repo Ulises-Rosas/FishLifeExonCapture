@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import pickle
 import psutil
@@ -145,8 +146,13 @@ def forcemove(file, destination):
 
     shutil.move(file, destination)
 
-def taken_mem(part = 0.75):
+def taken_mem(part = 0.75, format = "g"):
     # default memory
-    totalmem = psutil.virtual_memory().total/(1024**3)
+    if format == "g":
+        factor = 1024**3
+    elif format == "m":
+        factor = 1024**2
+
+    totalmem = psutil.virtual_memory().total/(factor)
 
     return int(part*totalmem)
