@@ -424,12 +424,12 @@ class aTRAM:
     @property
     def preprocess(self):
         	
-        chg_str    = "atram_preprocessor.py -b {db_prefix}"
-        static_str = """ -t {tmp_path}\
-                         --cpus {threads}\
+        chg_str    = """atram_preprocessor.py\
+                       -b {db_prefix}\
+                       -t {tmp_path}"""
+        static_str = """ --cpus {threads}\
                          --mixed-ends""".format(
-                            tmp_path  = self.tmp_path,
-                            threads   = self.threads)
+                             threads   = self.threads)
 
         return chg_str + static_str
 
@@ -439,14 +439,13 @@ class aTRAM:
         chg_str    = """atram.py\
                       -b {db_prefix}\
                       -q {init_combi_fa}\
-                      -o {prefix}"""
-        static_str = """ -t {tmp_path}  \
-                         -a {assambler}\
+                      -o {prefix}\
+                      -t {tmp_path}"""
+        static_str = """ -a {assambler}\
                          -i {itera}\
                          --log-level=error\
                          --cpus {threads}\
                          --max-memory {memory}""".format(
-                                    tmp_path  = self.tmp_path,
                                     assambler = self.assambler,
                                     itera     = self.iterations,
                                     threads   = self.threads,
@@ -483,6 +482,9 @@ class aTRAM:
                     if re.findall("atram$", outname):
 
                         forcemove(outname, ospj(self.path, core))
+                        print("\nfrom -----> ", outname)
+                        print("to   -----> ", ospj(self.path, core), "\n" )
+
 
             except  FileExistsError:
                 pass
@@ -545,7 +547,10 @@ class aTRAM:
             db_prefix = ospj(path,core)
 
             # preprocessing
-            cmdpre = self.preprocess.format(db_prefix = db_prefix).split() + fastq_tar
+            cmdpre = self.preprocess.format(
+                                    db_prefix = db_prefix,
+                                    tmp_path  = path
+                                    ).split() + fastq_tar
             # print(cmdpre)
             runShell(cmdpre)
 
@@ -553,6 +558,7 @@ class aTRAM:
             for exon in initfas:
                 # init_exon = ospj(path, exon)
                 cmdatram  = self.atram.format(
+                                    tmp_path      = path,
                                     db_prefix     = db_prefix,
                                     init_combi_fa = exon,
                                     prefix        = ospj(path, self.assambler)
