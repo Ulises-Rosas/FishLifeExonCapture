@@ -476,16 +476,12 @@ class aTRAM:
 
             try:
                 os.rename(name, outname)
-
+                
                 if self.runat is not None:
-
                     if re.findall("atram$", outname):
-
                         forcemove(outname, ospj(self.path, core))
-                        print("\nfrom -----> ", outname)
-                        print("to   -----> ", ospj(self.path, core), "\n" )
-
-
+                        sys.stdout.write( ospj(self.path, core) + "\n")
+                        
             except  FileExistsError:
                 pass
 

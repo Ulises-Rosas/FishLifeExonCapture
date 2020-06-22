@@ -165,7 +165,7 @@ class TollCheck:
 
         self.__save_obj__(df, self.hiddenfile)
 
-    def massiveaddition(self):
+    def massiveaddition(self, isdir = False):
         """
         add one step of whole registered files
         in previous runs
