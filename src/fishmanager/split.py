@@ -12,23 +12,25 @@ def simplepartition(path, npart):
         exit()
 
     tc_class = TollCheck(path = path)
-
     mydict = tc_class.pickleIt
-    mykyes = list(mydict.keys())
+    mykeys = list(mydict.keys())
 
-    window = int(len(mykyes)/npart)
-    group  = 0
-    init   = 0
+    window = len(mykeys)/npart if len(mykeys) >= npart else 1
 
-    # comparing a index and a length
-    while len(mykyes) >= init + 1:
-        # print(group)
-        outhiddenfile = METADATAFILE.format(group)
-
-        names =  mykyes[init: init + window]
-        out   = { i:mydict[i] for i in names}
-        
+    init = 0
+    done = []
+    for i in range(0, npart):
+        outhiddenfile = METADATAFILE.format(i)
+    #     print(outhiddenfile)
+        names = mykeys[round(init): round(init + window)]
+    #     print(init, init + window)
+    #     print(round(init), round(init + window))
+    #     out = {i: '' for i in names}
+        out = { i:mydict[i] for i in names}
         tc_class.__save_obj__(out, outhiddenfile)
-
+        
+        done += names
+        if len(done) == len(mykeys):
+            break
+            
         init += window
-        group += 1
