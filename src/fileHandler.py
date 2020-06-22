@@ -73,7 +73,7 @@ class TollCheck:
             name  = self.hiddenfile
 
         with open( name , 'wb') as f:
-            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(obj, f, pickle.DEFAULT_PROTOCOL)
 
     def __load_info__(self, name = None):
 
@@ -144,39 +144,44 @@ class TollCheck:
 
         self.__save_obj__(df, self.hiddenfile)
 
-    def massivedeletion(self):
+    def massivedeletion(self, isdir = False):
         """
         delete one step of whole label
         files
-
         self = TollCheck(path=".", step = "step1")
-
         Use under caution
         """
         df = self.pickleIt
 
-        for k,v in df.items():
-            
-            if df[k].__contains__(self.step):
-                del df[k][self.step] 
-        
+        if isdir:
+            if df.__contains__(self.step):
+                del df[self.step]
+            else:
+                sys.stdout.write("\nCheck directory\n")
+        else:
+             for k,v in df.items():
+                if df[k].__contains__(self.step):
+                    del df[k][self.step] 
+
         self.__save_obj__(df, self.hiddenfile)
 
     def massiveaddition(self):
         """
         add one step of whole registered files
         in previous runs
-
         self = TollCheck(path=".", step = "step1")
-
         Use under caution
         """
         df = self.pickleIt
 
-        for k,v in df.items():
-            df[k][self.step] = 1
-        
+        if isdir:
+            df[self.step] = {}
+        else:    
+            for k,v in df.items():
+                df[k][self.step] = 1
+                
         self.__save_obj__(df, self.hiddenfile)
+        
 class SetEnvironment:
 
     def __init__(self, 

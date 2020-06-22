@@ -1,14 +1,13 @@
 
 import sys
+from fishmanager.utils import checkstep
 from fishlifeexoncapture.fileHandler import TollCheck
 
-def checkstep(step):
-    if step is None:
-        sys.stdout.write("\nPlease, introduce an step\n")
-        exit()
 
-def at(path, step, branch):
-    checkstep(step)
+def at(path, step, branch, isdir, step_choices):
+    
+    if not isdir:
+        checkstep(step, step_choices)
 
     if branch is not None:
 
@@ -16,13 +15,13 @@ def at(path, step, branch):
             fishfiles = TollCheck(path  = path, 
                                  step   = step,
                                  branch = b)
-            fishfiles.massivedeletion()
+            fishfiles.massivedeletion(isdir = isdir)
     else:
 
         fishfiles = TollCheck(path   = path,
                               step   = step,
                               branch = branch)
-        fishfiles.massivedeletion()
+        fishfiles.massivedeletion(isdir = isdir)
 
 
 

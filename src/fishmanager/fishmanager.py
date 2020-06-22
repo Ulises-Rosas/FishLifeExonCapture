@@ -2,7 +2,8 @@
 import sys
 import argparse
 
-choices=["step1",
+step_choices = [
+        "step1",
         "step2a",
         "step2b",
         "step3",
@@ -11,8 +12,7 @@ choices=["step1",
         "step5elopomorph",
         "step5osteoglossomorph",
         "step5otophysi"
-        ]
-
+]
 
 parser = argparse.ArgumentParser( formatter_class = argparse.RawDescriptionHelpFormatter, 
                                       description = '''
@@ -40,13 +40,15 @@ look.add_argument('-b', '--branch',
 
 
 # delete subcommand
-delete = subparsers.add_parser('delete', help = "delete steps at metadata")
+delete = subparsers.add_parser('delete', help = "delete steps or directory at metadata")
 delete.add_argument('step',
-                    choices = choices,
-                    metavar = "step",
+                    metavar = "step or directory",
                     type    = str,
                     default = None,
-                    help    = 'Step [Default = "None"]')
+                    help    = 'Step or directory [Default = "None"]')
+delete.add_argument('-d', '--isdir',
+                    action= "store_true",
+                    help    = '[Optional] If selected, a directory is deleted')
 delete.add_argument('-p', '--path',
                     metavar = "",
                     type    = str,
@@ -63,13 +65,15 @@ delete.add_argument('-b', '--branch',
 
 
 # add subcommand
-add = subparsers.add_parser('add', help = "add an step at metadata")
+add = subparsers.add_parser('add', help = "add an step or directory at metadata")
 add.add_argument('step',
-                 choices = choices,
-                 metavar = "step",
+                 metavar = "step or directory",
                  type    = str,
                  default = None,
-                 help    = 'Step [Default = "None"]')
+                 help    = 'Step or directory [Default = "None"]')
+add.add_argument('-d', '--isdir',
+                action= "store_true",
+                help    = '[Optional] If selected, a directory is deleted')
 add.add_argument('-p', '--path',
                     metavar = "",
                     type    = str,
@@ -123,12 +127,34 @@ split.add_argument('-f','--for',
                     default= None,
                     help='[Optional] Make split for a given step [Default = "None"]')
 
+# merge
 merge = subparsers.add_parser('merge', help = "merge files")
 merge.add_argument('-p','--path',
                     metavar="",
                     default= ".",
                     type=str,
                     help='[Optional] Path where files are [Default = "."]')
+
+
+# create
+touch = subparsers.add_parser('create', help = "create metadata from directories")
+touch.add_argument('-p','--path',
+                    metavar="",
+                    default= ".",
+                    type=str,
+                    help='[Optional] Path where files are [Default = "."]')
+touch.add_argument('-i','--pattern',
+                    metavar="",
+                    nargs = "+",
+                    default= [".*"],
+                    type=str,
+                    help='[Optional] Pattern on directories names [Default = [".*"] ]')
+touch.add_argument('-c','--counter_pattern',
+                    metavar="",
+                    nargs = "+",
+                    default= None,
+                    type=str,
+                    help='[Optional] Counter pattern on directories names [Default = None]')
 
 
 def main():
@@ -142,17 +168,25 @@ def main():
 
     elif wholeargs.subcommand == "delete":
         import fishmanager.delete as fishdelete
-
-        fishdelete.at(path  = wholeargs.path,
-                     step   = wholeargs.step,
-                     branch = wholeargs.branch)
+#         print(wholeargs)
+        fishdelete.at(
+            path = wholeargs.path,
+            isdir = wholeargs.isdir,
+            step   = wholeargs.step,
+            branch = wholeargs.branch,
+            step_choices = step_choices
+        )
 
     elif wholeargs.subcommand == "add":
         import fishmanager.add as fishadd
 
-        fishadd.at(path   = wholeargs.path,
-                   step   = wholeargs.step,
-                   branch = wholeargs.branch)
+        fishadd.at(
+            path = wholeargs.path,
+            isdir = wholeargs.isdir,
+            step   = wholeargs.step,
+            branch = wholeargs.branch,
+            step_choices = step_choices
+        )
 
     elif wholeargs.subcommand == "mkdir":
         import fishmanager.mkdir as fishmkdir
@@ -176,7 +210,15 @@ def main():
         import fishmanager.merge as fishsmerge
 
         fishsmerge.main(wholeargs.path)
+        
+    elif wholeargs.subcommand == "create":
+        import fishmanager.touch as touch
 
-
+        touch.main(
+            path = wholeargs.path,
+            pattern = wholeargs.pattern,
+            counter_pattern = wholeargs.counter_pattern
+        )
+        
 if __name__ == "__main__":
     main()
