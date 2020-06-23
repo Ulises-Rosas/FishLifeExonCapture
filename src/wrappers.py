@@ -897,7 +897,9 @@ class Exonerate:
         shutil.rmtree(self.hiddendir)
 
     def run(self, input = None):
-        self.exoniterator(input)
+        
+        if input:
+            self.exoniterator(input)
 
 class Flankfiltering:
     """
@@ -1009,11 +1011,14 @@ class Flankfiltering:
             
             flanks = [(core, i) for i in glob.glob(ospj(path, "*")) if re.findall(patt, i)]
 
+            if not flanks:
+                continue
+
             with Pool(processes = self.threads) as p:
                 dir_files = [*p.map(self.protoexoniterator, flanks)]
     
             exoninfo = "%s_%s.csv" % (core, self.step)
-            
+
             with open( ospj(path, exoninfo), "w" ) as f:
                 f.writelines( filter(None, dir_files) )
 
