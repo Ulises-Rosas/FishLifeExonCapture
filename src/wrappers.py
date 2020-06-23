@@ -911,9 +911,10 @@ class Flankfiltering:
     def __init__(self,
                  tc_class = None,
                  identity = None,
-                 threads  = None,
+                 threads  = 1,
                  fasta    = None,
-                 memory   = None ):
+                 memory   = None,
+                 keep     = False):
 
         self.int_reqs  = [
                           "step5percomorph",
@@ -927,12 +928,13 @@ class Flankfiltering:
         self.path      = self.tc_class.path
         self.step      = self.tc_class.step
 
-
         self.identity = identity
         self.fasta    = fasta
         self.threads  = threads
         self.memory   = memory
-
+        self.keep     = keep
+                
+        self.cdhitest  = "cd-hit-est -i {cd_input} -o {cd_output} -c {identity} -M {memory}"
 
     @property
     def check_corenames(self):
@@ -954,21 +956,68 @@ class Flankfiltering:
         return matchExonerateCdhit( **kwargs )
 
     def protoexoniterator(self, name):
-        print(name)
-
+        core, flanks = name
+        
+        match_out = flanks + ".flankfilt"
+        # .atram.cdhit.flanks
+        cdhitout = match_out + ".cdhit"
+        # .atram.cdhit.flanks.cdhit
+        
+        self.matchExonerateCdhit(
+            taxon  = core, 
+            flanks = flanks,
+            fasta  = flanks + ".exonerate",
+            output = match_out
+        )
+        runShell(
+            self.cdhitest.format(
+                cd_input  = match_out,
+                cd_output = cdhitout,
+                identity  = self.identity,
+                memory    = self.memory
+            ).split()
+        )
+        count = countheaders(cdhitout)
+        
+        exonname = re.sub(
+                    "^.+.%s.(.+).fq.+" % core,
+                    "\\1", 
+                    flanks)
+        
+        if not self.keep:
+            os.remove( cdhitout + ".clstr")
+                    
+        if not count:
+            os.remove( match_out )
+            os.remove( cdhitout  )
+            return None
+        
+        elif count > 1:
+            return "%s,%s\n" % (exonname, "failed")
+        
+        else:
+            return "%s,%s\n" % (exonname, "passed")
+        
     def exoniterator(self):
 
         if not self.check_corenames:
+            sys.stdout.write('\nNo files to work on\n')
             exit()
-
-        # out = []
+            
         patt = self.fasta
         for core, path in self.check_corenames:
-
-            flanks = [ospj(path, i) for i in os.listdir(path) if re.findall(patt, i)]
+            
+            flanks = [(core, i) for i in glob.glob(ospj(path, "*")) if re.findall(patt, i)]
 
             with Pool(processes = self.threads) as p:
                 dir_files = [*p.map(self.protoexoniterator, flanks)]
+    
+            exoninfo = "%s_%s.csv" % (core, self.step)
+            
+            with open( ospj(path, exoninfo), "w" ) as f:
+                f.writelines( filter(None, dir_files) )
+
+            self.tc_class.label(core)
 
     def run(self):
         self.exoniterator()
