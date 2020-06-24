@@ -15,7 +15,7 @@ fishlifefiles = [
                 "map-exons-list.txt",
                 "map-exons-othophysi-list.txt",
                 "all_Master.fasta*",          # heavy install
-                "ALL_Master_Otophysi.fasta*"  # heavy install
+                "ALL_Master_Otophysi.fasta*",  # heavy install
                 "ExonList.txt",
                 "MitochondrialExonList.txt",
                 "ReadingFramesOtophysi.dict",
@@ -33,7 +33,7 @@ setup(
                 "fishmanager"
                 ],
     package_dir  = {"fishlifeexoncapture" : "src",
-                    "fishlifedat"         : "."   ,
+                    "fishlifedat"         : "data"   ,
                     "fishlifescript"      : "scripts",
                     "fishmanager"         : "src/fishmanager",
                     },
