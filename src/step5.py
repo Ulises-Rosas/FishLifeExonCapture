@@ -8,8 +8,8 @@ from fishlifeexoncapture.fileHandler import TollCheck
 from fishlifeexoncapture.wrappers    import Cdhit, Exonerate
 from fishlifeexoncapture.utils       import taken_mem
 
-DEFAULT_MEM  = taken_mem(part = 0.95)
-FASTA_SUFFIX = ".atram$"
+DEFAULT_MEM       = taken_mem(part = 0.95)
+FASTA_SUFFIX      = ".atram$"
 
 def getOpts():
 
@@ -32,12 +32,6 @@ def getOpts():
                         type    = str,
                         default = ".",
                         help    = '[Optional] Path where files are [Default = "."]')
-    parser.add_argument('-a', '--assambler',
-                        choices= ["velvet", "trinity"],
-                        metavar = "",
-                        type    = str,
-                        default = "velvet",
-                        help    = '[Optional] Previous used assambler (step 4)[Default = "velvet"]')
     parser.add_argument('-m', '--memory',
                         metavar = "",
                         type    = int,
@@ -106,7 +100,6 @@ def main():
                       memory   = args.memory * 1024)
 
     exonerate = Exonerate(tc_class  = fishfiles, 
-                          assambler = args.assambler,
                           threads   = args.threads,
                           memory    = args.memory * 1024,
                           checked_names = cdhitest.check_corenames,

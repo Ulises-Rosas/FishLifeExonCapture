@@ -691,7 +691,6 @@ class Exonerate:
                  tc_class  = None,
                  threads   = None,
                  memory    = None,
-                 assambler = None,
                  identity  = 0.99,
                  keep      = False,
                  checked_names = None):
@@ -702,7 +701,6 @@ class Exonerate:
 
         self.threads   = threads
         self.memory    = memory
-        self.assambler = assambler
         self.check_corenames = checked_names
         self.keep      = keep
         self.identity  = identity 
@@ -897,7 +895,7 @@ class Exonerate:
         shutil.rmtree(self.hiddendir)
 
     def run(self, input = None):
-        
+
         if input:
             self.exoniterator(input)
 
