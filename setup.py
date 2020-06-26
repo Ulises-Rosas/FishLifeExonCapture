@@ -18,6 +18,7 @@ fishlifefiles = [
                 "ALL_Master_Otophysi.fasta*",  # heavy install
                 "ExonList.txt",
                 "MitochondrialExonList.txt",
+                "OtophysiExons.txt",
                 "ReadingFramesOtophysi.dict",
                 "ReadingFramesElopomorph.dict",
                 "ReadingFramesPercomorph.dict",
@@ -41,15 +42,19 @@ setup(
                     "fishlifedat"          : fishlifefiles },
     entry_points = {
         'console_scripts': [
-            'joinexonfiles           = fishlifescript.joinexonfiles:main',
-            'fishmanager             = fishmanager.fishmanager:main',
-            'trimmomatic-loop-PE     = fishlifeexoncapture.step1:main',
-            'map-exons               = fishlifeexoncapture.step2a:main',
-            'map-exons-otophysi      = fishlifeexoncapture.step2b:main',
-            'initialVelvet           = fishlifeexoncapture.step3:main',
-            'runaTRAM                = fishlifeexoncapture.step4:main',
-            'ExonFiltering           = fishlifeexoncapture.step5:main',
-            'FlankFiltering          = fishlifeexoncapture.step5b:main'
+            'joinexonfiles                = fishlifescript.joinexonfiles:main',
+            'fishmanager                  = fishmanager.fishmanager:main',
+            'trimmomatic-loop-PE          = fishlifeexoncapture.step1:main',
+            'map-exons                    = fishlifeexoncapture.step2a:main',
+            'map-exons-otophysi           = fishlifeexoncapture.step2b:main',
+            'initialVelvet                = fishlifeexoncapture.step3:main',
+            'runaTRAM                     = fishlifeexoncapture.step4:main',
+            'ExonFiltering                = fishlifeexoncapture.step5:main',
+            'FlankFiltering               = fishlifeexoncapture.step5b:main',
+            'preAlignment                 = fishlifeexoncapture.step6a:main',
+            'preAlignment_Otophysi        = fishlifeexoncapture.step6a_oto:main',
+            'preAlignmentFlanks           = fishlifeexoncapture.step6b:main',
+            'preAlignmentFlanks_Otophysi  = fishlifeexoncapture.step6b_oto:main'
             ]
     },
     install_requires = dependencies,

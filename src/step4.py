@@ -26,7 +26,7 @@ def getOpts():
                         metavar = "",
                         type    = str,
                         default = ".fastq$",
-                        help    = '[Optional] Regex pattern for fastq\'s files [Default = ".fastq$"]')
+                        help    = '[Optional] Regex pattern for the file name with sequence read archive [Default = ".fastq$"]')
     parser.add_argument('-v', '--velvetout',
                         metavar = "",
                         type    = str,

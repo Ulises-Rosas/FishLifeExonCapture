@@ -1024,3 +1024,124 @@ class Flankfiltering:
 
     def run(self):
         self.exoniterator()
+
+class preAln:
+
+    def __init__(self,
+                 tc_class = None,
+                 threads  = 1,
+                 flank    = False,
+                 otophysi  = False,
+                 pattern  = ".cdhit.exonerate.cdhit$"):
+
+        self.int_reqs  = [
+                          "step5percomorph",
+                          "step5elopomorph",
+                          "step5osteoglossomorph",
+                          "step5otophysi"
+                          ]
+        
+        self.tc_class  = tc_class
+        self.corenames = self.tc_class.pickleIt
+        self.path      = self.tc_class.path
+        self.step      = self.tc_class.step
+        
+        self.otophysi  = otophysi
+        self.flank     = flank
+        self.threads   = threads
+        self.pattern   = pattern
+        # placeholder
+        self.glob_exon = ""
+
+    @property
+    def check_corenames(self):
+
+        names = self.corenames
+        out   = []
+        for k,v in names.items():
+
+            isreqs  = check_reqs(self.int_reqs, v)
+            islabel = v.__contains__(self.step)
+
+            if isreqs and not islabel:
+                out += [ospj(self.path, k)]
+        return out  
+    
+    def read_exonlists(self, path, file):
+        return [ i.strip()  for i in open( ospj(path, file), "r" ).readlines() ]
+
+    def fas_to_dic(self, **kwargs):
+        from fishlifeexoncapture.utils import fas_to_dic
+        return fas_to_dic( **kwargs )
+    
+    def get_exonseq(self, file):
+        
+        exon_patt  = re.compile( ".*%s.*" % self.glob_exon )
+        if exon_patt.match(file):
+            if countheaders(file) == 1:
+                return self.fas_to_dic(file = file)        
+        
+    def get_allfiles(self, file):
+        if re.findall(self.pattern, file):
+            return file
+        
+    @property
+    def aln_dir(self):
+        aln_name = "Alignments" if not self.flank else "Alignments_Flanks"
+        return ospj(self.path, aln_name)
+    
+    def create_dir(self):
+        if not os.path.isdir(self.aln_dir):
+            os.mkdir(self.aln_dir)
+    
+    def write_seqs(self, content):
+        completename = ospj(self.aln_dir,
+                            self.glob_exon + ".unaligned.fasta")
+        
+        if not os.path.exists(completename):
+            with open(completename, 'w') as f:
+                for k,v in content.items():
+                    f.write(k + "\n")
+                    f.write(v + "\n")
+                    
+    def get_exonlists(self):
+        
+        mypath = fishlifedat.__path__[0]
+        
+        if self.otophysi:
+            otolist = self.read_exonlists( mypath, "OtophysiExons.txt")
+            return otolist + ["G0001"]
+        
+        else:
+            nucl = self.read_exonlists( mypath, "ExonList.txt" )
+            mito = self.read_exonlists( mypath, "MitochondrialExonList.txt" )  
+            return nucl + mito
+
+    def create_files(self):
+
+        self.create_dir()
+        exonlist = self.get_exonlists()
+        
+        # taking care of load time 
+        # on threads
+        with Pool(processes = self.threads) as p:
+
+            all_files = []
+            for path in self.check_corenames:
+                
+                tmp = p.map(self.get_allfiles, glob.glob(ospj(path, "*"))) 
+                all_files += filter(None, tmp)
+            # print(all_files)
+                
+            for iexon in exonlist:    
+                self.glob_exon = iexon
+                # print(self.glob_exon)
+                # with Pool(processes = self.threads) as p:
+                tmp_seqs  = p.map(self.get_exonseq, all_files)
+                tmp_filte = list(filter(None, tmp_seqs))
+                
+                if tmp_filte:
+                    # print(self.glob_exon)
+                    # print(tmp_filte)
+                    # with Pool(processes = self.threads) as p:
+                    [*p.map(self.write_seqs, tmp_filte)]
