@@ -1094,16 +1094,17 @@ class preAln:
         if not os.path.isdir(self.aln_dir):
             os.mkdir(self.aln_dir)
     
-    def write_seqs(self, content):
+    def write_seqs(self, dictionaries):
+
         completename = ospj(self.aln_dir,
                             self.glob_exon + ".unaligned.fasta")
-        
-        if not os.path.exists(completename):
-            with open(completename, 'w') as f:
+
+        with open(completename, 'w') as f:
+            for content in dictionaries:
                 for k,v in content.items():
                     f.write(k + "\n")
                     f.write(v + "\n")
-                    
+                        
     def get_exonlists(self):
         
         mypath = fishlifedat.__path__[0]
@@ -1144,4 +1145,4 @@ class preAln:
                     # print(self.glob_exon)
                     # print(tmp_filte)
                     # with Pool(processes = self.threads) as p:
-                    [*p.map(self.write_seqs, tmp_filte)]
+                    self.write_seqs(tmp_filte)
