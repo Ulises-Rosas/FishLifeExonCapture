@@ -3,15 +3,19 @@ import sys
 import argparse
 
 step_choices = [
-        "step1",
+        "step1" ,
         "step2a",
         "step2b",
-        "step3",
+        "step3" ,
         "step4" ,
         "step5percomorph",
         "step5elopomorph",
         "step5osteoglossomorph",
-        "step5otophysi"
+        "step5otophysi",
+        "step6a",
+        "step6a_oto",
+        "step6b",
+        "step6b_oto"
 ]
 
 parser = argparse.ArgumentParser( formatter_class = argparse.RawDescriptionHelpFormatter, 
@@ -164,7 +168,11 @@ def main():
     if wholeargs.subcommand == "look":
         import fishmanager.look as fishlook
 
-        fishlook.tometadata(wholeargs.path, wholeargs.branch)
+        fishlook.tometadata(
+            path           = wholeargs.path,
+            partition_list = wholeargs.branch,
+            step_choices   = step_choices
+        )
 
     elif wholeargs.subcommand == "delete":
         import fishmanager.delete as fishdelete

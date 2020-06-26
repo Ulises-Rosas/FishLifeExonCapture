@@ -15,6 +15,11 @@ Consider merge branchs first with:
 \n\t fishmanager merge -p %s\n
 or specify branch\n"""
 
+BRANCHERR2="""
+This step requires to merge all branches.
+Consider merge branchs with:
+\n\t fishmanager merge -p %s\n\n"""
+
 HIDDERR="""
 No metadata file found.
 Consider run: 
@@ -29,7 +34,8 @@ class TollCheck:
                  pattern = None,
                  step = None,
                  extentions = None,
-                 branch = None):
+                 branch = None,
+                 req_merge = False):
 
 
         self.branch = branch
@@ -40,6 +46,7 @@ class TollCheck:
         self.path = path
         self.pattern = pattern
         self.branch  = branch
+        self.req_merge = req_merge
 
     @property
     def hiddenfile(self):
@@ -59,7 +66,8 @@ class TollCheck:
             branch_files = os.path.join(self.path, METADATAFILE + "*")
 
             if glob.glob(branch_files):
-                sys.stderr.write(BRANCHERR % self.path)
+                err_msg = BRANCHERR if not self.req_merge else BRANCHERR2
+                sys.stderr.write(err_msg % self.path)
                 exit()
 
             header = ".ignoreFishLifeExonCapture"

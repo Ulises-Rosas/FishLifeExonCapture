@@ -5,22 +5,10 @@ import sys
 import glob
 from fishlifeexoncapture.fileHandler import TollCheck
 
-choices=[
-        "step1" ,
-        "step2a",
-        "step2b",
-        "step3" ,
-        "step4" ,
-        "step5percomorph",
-        "step5elopomorph",
-        "step5osteoglossomorph",
-        "step5otophysi"
-        ]
-
 
 METADATAFILE = ".ignoreFishLifeExonCapture_part"
 
-def printdict(mydict):
+def printdict(mydict, choices):
 
     maxchar = max([len(i) for i in  mydict.keys()  ])
     
@@ -57,7 +45,7 @@ def printdict(mydict):
 
     return (maxchar, maxcharstep, out)
 
-def tometadata(path, partition_list = None):
+def tometadata(path, partition_list = None, step_choices = None):
 
     # path = "."
     fishfiles = TollCheck(path = path)
@@ -77,7 +65,7 @@ def tometadata(path, partition_list = None):
     proto_base =    "%s-+-%s\n"
 
     if not partitions:
-        mydict = printdict(fishfiles.pickleIt)
+        mydict = printdict(fishfiles.pickleIt, step_choices)
         dirmax, stepmax, values = mydict
 
         fmt    = proto_fmt.format( dirmax, stepmax)
@@ -100,7 +88,7 @@ def tometadata(path, partition_list = None):
         for f in partitions:
             key = re.sub(".+_part(.+)", "\\1", f)
 
-            mydict = printdict( fishfiles.__load_info__(f) )
+            mydict = printdict( fishfiles.__load_info__(f), step_choices)
             dirmax, stepmax, values = mydict
 
             dirmaxchar.append( dirmax )
