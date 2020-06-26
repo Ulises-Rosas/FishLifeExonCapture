@@ -892,7 +892,7 @@ class Exonerate:
 
             self.tc_class.label(core)
 
-        shutil.rmtree(self.hiddendir)
+        # shutil.rmtree(self.hiddendir)
 
     def run(self, input = None):
 
