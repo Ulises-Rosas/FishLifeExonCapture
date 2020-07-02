@@ -24,6 +24,10 @@ fishlifefiles = [
                 "ReadingFramesPercomorph.dict",
                 "ReadingFramesOsteoglossomorph.dict"
                 ]
+
+fishlifesubmo = [
+                "MACSE_V2_PIPELINES/UTILS/macse_v2.03.jar"
+                ]
     
 setup(
     name = "fishlifeexoncapture",
@@ -31,15 +35,19 @@ setup(
     packages = ["fishlifeexoncapture",
                 "fishlifedat",
                 "fishlifescript",
-                "fishmanager"
+                "fishmanager",
+                "fishlifesubmo"
                 ],
     package_dir  = {"fishlifeexoncapture" : "src",
                     "fishlifedat"         : "data"   ,
                     "fishlifescript"      : "scripts",
                     "fishmanager"         : "src/fishmanager",
+                    "fishlifesubmo"       : ".",
                     },
-    package_data = {"fishlifeexoncapture"  : ["data/*"],
-                    "fishlifedat"          : fishlifefiles },
+    package_data = {"fishlifeexoncapture" : ["data/*"],
+                    "fishlifedat"         : fishlifefiles,
+                    "fishlifesubmo"       : fishlifesubmo,
+                    },
     entry_points = {
         'console_scripts': [
             'joinexonfiles                = fishlifescript.joinexonfiles:main',
