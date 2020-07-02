@@ -1148,6 +1148,7 @@ class preAln:
                     # print(tmp_filte)
                     # with Pool(processes = self.threads) as p:
                     [*p.map(self.write_seqs, tmp_filte)]
+                    taken_exons += [self.glob_exon]
 
         # create metadata for exons
         if taken_exons:
