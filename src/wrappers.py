@@ -1079,7 +1079,7 @@ class preAln:
         exon_patt  = re.compile( ".*%s.*" % self.glob_exon )
         if exon_patt.match(file):
             if countheaders(file) == 1:
-                return self.fas_to_dic(file = file)        
+                return list(self.fas_to_dic(file = file).items())[0]
         
     def get_allfiles(self, file):
         if re.findall(self.pattern, file):
@@ -1094,16 +1094,16 @@ class preAln:
         if not os.path.isdir(self.aln_dir):
             os.mkdir(self.aln_dir)
     
-    def write_seqs(self, dictionaries):
+    def write_seqs(self, mytup):
 
         completename = ospj(self.aln_dir,
                             self.glob_exon + ".unaligned.fasta")
 
-        with open(completename, 'w') as f:
-            for content in dictionaries:
-                for k,v in content.items():
-                    f.write(k + "\n")
-                    f.write(v + "\n")
+        with open(completename, 'a') as f:
+            
+            f.write(
+                "{exon}\n{seq}\n".format(exon = mytup[0], seq = mytup[1])
+                )
                         
     def get_exonlists(self):
         
@@ -1123,6 +1123,8 @@ class preAln:
         self.create_dir()
         exonlist = self.get_exonlists()
         
+
+        taken_exons = []
         # taking care of load time 
         # on threads
         with Pool(processes = self.threads) as p:
@@ -1145,4 +1147,11 @@ class preAln:
                     # print(self.glob_exon)
                     # print(tmp_filte)
                     # with Pool(processes = self.threads) as p:
-                    self.write_seqs(tmp_filte)
+                    [*p.map(self.write_seqs, tmp_filte)]
+
+        # create metadata for exons
+        if taken_exons:
+            obj = { i + " "*4: {} for i in taken_exons}
+
+            tc  = TollCheck(path = self.aln_dir)
+            tc.__save_obj__(obj  = obj)
