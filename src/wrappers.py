@@ -1123,6 +1123,8 @@ class preAln:
         self.create_dir()
         exonlist = self.get_exonlists()
         
+
+        taken_exons = []
         # taking care of load time 
         # on threads
         with Pool(processes = self.threads) as p:
@@ -1147,3 +1149,11 @@ class preAln:
                     # with Pool(processes = self.threads) as p:
                     [*p.map(self.write_seqs, tmp_filte)]
 
+                    taken_exons += [self.glob_exon]
+
+        # create metadata for exons
+        if taken_exons:
+            obj = { i + " "*4: {} for i in taken_exons}
+
+            tc  = TollCheck(path = self.aln_dir)
+            tc.__save_obj__(obj  = obj)
