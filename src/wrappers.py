@@ -1312,13 +1312,18 @@ class macse:
             [*p.map(self.proto_run, container)]
             
             for exon in container:
+
                 target_file = exon + ".NT_aligned.fasta"
-                mytuples    = list( self.fas_to_dic(file = target_file).items() )
+
+                try:
+                    mytuples = list( self.fas_to_dic(file = target_file).items() )
+                except FileNotFoundError:
+                    continue
+
                 # character replacement
                 myreplacements = [ *p.map(self.myreplace, mytuples) ]
                 
                 with open(target_file, "w") as myfile:            
                     for k,v in myreplacements:
                         myfile.write( "%s\n%s\n" % (k,v) )
-
-        
+                
