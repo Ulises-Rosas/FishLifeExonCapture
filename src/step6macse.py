@@ -31,6 +31,16 @@ def getOpts():
                         type    = int,
                         default = 1,
                         help    = '[Optional] number of cpus [Default = 1]')
+    parser.add_argument('-b', '--branch',
+                        metavar = "",
+                        type    = str,
+                        default = None,
+                        help    = '''[Optional] If metadata was splitted
+                                     with `fishmanager split X`, where X is 
+                                     a number, this option
+                                     let to work only in a specific branch.
+                                     To have more details about branch scheme
+                                     run: `fishmanager look` [Default = None]''')
     parser.add_argument('-k', '--keepdb',
                         action= "store_true",
                         help    = '[Optional] If selected, databases and intermediate files are not deleted')
@@ -43,7 +53,8 @@ def main():
     args = getOpts()
 
     tc_class = TollCheck(path = args.path,
-                         step = "step6macse")
+                         step = "step6macse",
+                         branch = args.branch)
 
     macse(tc_class  = tc_class,
           homovalue = args.min_homo,
