@@ -9,7 +9,7 @@ from os.path import join as ospj
 from multiprocessing import Pool
 
 import fishlifedat
-
+import fishlifesubmo
 
 from fishlifeexoncapture.fileHandler import TollCheck
 from fishlifeexoncapture.utils import runShell, addpath, getdict, check_reqs, countheaders, forcemove
@@ -480,7 +480,7 @@ class aTRAM:
                 if self.runat is not None:
                     if re.findall("atram$", outname):
                         forcemove(outname, ospj(self.path, core))
-                        sys.stdout.write( ospj(self.path, core) + "\n")
+                        sys.stdout.write( ospj(self.path, outname) + "\n")
                         
             except  FileExistsError:
                 pass
@@ -1156,3 +1156,169 @@ class preAln:
 
             tc  = TollCheck(path = self.aln_dir)
             tc.__save_obj__(obj  = obj)
+
+class macse:
+    def __init__(self,
+                 tc_class  = None,
+                 homovalue = 0.4,
+                 otophysi  = False,
+                 threads   = None,
+                 keep      = False):
+        """
+        for sequences in E*.unaligned.fasta; do
+
+            java -jar ../../macse_v2.03.jar\
+                 -prog trimNonHomologousFragments \
+                 -seq $sequences \
+                 -min_homology_to_keep_seq 0.4 \
+                 -out_NT ${sequences%.*}.NT_trimNonHomologousFragments.fasta \
+                 -out_AA  ${sequences%.*}.AA_trimNonHomologousFragments.fasta;
+
+            java -jar ../../macse_v2.03.jar \
+                 -prog alignSequences \
+                 -seq ${sequences%.*}.NT_trimNonHomologousFragments.fasta \
+                 -out_NT ${sequences%.*.*}.NT_aligned.fasta \
+                 -out_AA ${sequences%.*.*}.AA_aligned.fasta;
+        done
+
+        # mitochondrial DNA
+        for sequences in ND*unaligned.fasta C*unaligned.fasta AT*unaligned.fasta; do
+
+            java -jar ../../macse_v2.03.jar \
+                 -prog trimNonHomologousFragments \
+                 -seq $sequences \
+                 -min_homology_to_keep_seq 0.4 \
+                 -out_NT ${sequences%.*}.NT_trimNonHomologousFragments.fasta \
+                 -out_AA  ${sequences%.*}.AA_trimNonHomologousFragments.fasta \
+                 -gc_def 2;
+
+            java -jar ../../macse_v2.03.jar \
+                 -prog alignSequences \
+                 -seq ${sequences%.*}.NT_trimNonHomologousFragments.fasta \
+                 -out_NT ${sequences%.*.*}.NT_aligned.fasta \
+                 -out_AA ${sequences%.*.*}.AA_aligned.fasta \
+                 -gc_def 2;
+        done
+        """
+        self.homovalue = homovalue
+        self.gc_def    = 2
+        self.otophysi = otophysi
+        self.threads  = threads
+        self.keep     = keep
+        
+        self.mitopatt  = "(^ND.+|^CO.+|^CY.+|^AT.+)"
+        
+        self.tc_class  = tc_class
+        self.path      = self.tc_class.path
+        self.corenames = self.tc_class.pickleIt
+        self.step      = self.tc_class.step
+        self.cmd       = """
+        java -jar  {jar_compiled}\
+             -prog {program}\
+             -seq  {seq}\
+             {homo}\
+             -out_NT {NT}\
+             -out_AA {AA}\
+             {gc_def}
+             """
+    @property
+    def jar_comp(self):
+        import fishlifesubmo
+        
+        return ospj(
+                    fishlifesubmo.__path__[0],
+                    "MACSE_V2_PIPELINES",
+                    "UTILS",
+                    "macse_v2.03.jar"
+                    )
+    @property
+    def check_corenames(self):
+        names = self.corenames
+        out   = []
+        for k,v in names.items():
+#             isreqs  = check_reqs(self.int_reqs, v)
+            islabel = v.__contains__(self.step)
+            if not islabel:
+                out += [ ospj(self.path, k.replace(" ", "")) ]
+        return out
+    
+    def fas_to_dic(self, **kwargs):
+        from fishlifeexoncapture.utils import fas_to_dic
+        return fas_to_dic( **kwargs )
+
+    def proto_run(self, completecore):
+#         cleancore    = core.replace(" ", "")
+#         completecore = ospj(self.path, cleancore)
+        trimnt_out = completecore + ".unaligned.NT_trimNonHomologousFragments.fasta"
+        trimaa_out = completecore + ".unaligned.AA_trimNonHomologousFragments.fasta"
+
+        alnnt_out = completecore + ".NT_aligned.fasta"
+        alnaa_out = completecore + ".AA_aligned.fasta"
+
+        is_mito = re.findall( self.mitopatt, os.path.basename(completecore) )
+        runShell(
+            self.cmd.format(
+                jar_compiled = self.jar_comp,
+                program = "trimNonHomologousFragments",
+                seq = completecore + ".unaligned.fasta",
+                homo = "-min_homology_to_keep_seq %s" % self.homovalue,
+                NT = trimnt_out,
+                AA = trimaa_out,
+                gc_def = "" if not is_mito else "-gc_def %s" % self.gc_def
+            ).strip().split()
+        )
+            
+        runShell(
+            self.cmd.format(
+                jar_compiled = self.jar_comp,
+                program = "alignSequences",
+                seq = trimnt_out,
+                homo = "",
+                NT = alnnt_out,
+                AA = alnaa_out,
+                gc_def = "" if not is_mito else "-gc_def %s" % self.gc_def
+            ).strip().split()
+        )
+        
+        if not self.keep:
+            try:
+                os.remove(completecore + ".unaligned_stats.csv")
+                os.remove(completecore + ".unaligned_mask_detail_NT.fasta")
+            except FileNotFoundError:
+                pass
+            
+        sys.stdout.write( "processed: %s\n" % completecore)
+
+    def myreplace(self, mytup):
+        return ( mytup[0], mytup[1].replace("!", "N") )
+
+    def run(self):
+        container = []
+        if self.otophysi:
+            
+            for i in self.check_corenames:
+                exon = os.path.basename(i)
+                if re.findall("^G.+", exon):
+                    container += [i]
+        else:
+            container = self.check_corenames
+                
+        if not container:
+            sys.stdout.write('\nNo exon to work with\n')
+            exit()          
+
+        with Pool(processes = self.threads) as p:
+            
+            [*p.map(self.proto_run, container)]
+            
+            for exon in container:
+                target_file = exon + ".NT_aligned.fasta"
+                mytuples    = list( self.fas_to_dic(file = target_file).items() )
+                # character replacement
+                myreplacements = [ *p.map(self.myreplace, mytuples) ]
+                
+                with open(target_file, "w") as myfile:            
+                    for k,v in myreplacements:
+                        myfile.write( "%s\n%s\n" % (k,v) )
+
+        

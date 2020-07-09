@@ -62,7 +62,9 @@ setup(
             'preAlignment                 = fishlifeexoncapture.step6a:main',
             'preAlignment_Otophysi        = fishlifeexoncapture.step6a_oto:main',
             'preAlignmentFlanks           = fishlifeexoncapture.step6b:main',
-            'preAlignmentFlanks_Otophysi  = fishlifeexoncapture.step6b_oto:main'
+            'preAlignmentFlanks_Otophysi  = fishlifeexoncapture.step6b_oto:main',
+            'run_macse                    = fishlifeexoncapture.step6macse:main',
+            'run_macse_Otophysi           = fishlifeexoncapture.step6macse_oto:main'
             ]
     },
     install_requires = dependencies,

@@ -15,7 +15,9 @@ step_choices = [
         "step6a",
         "step6a_oto",
         "step6b",
-        "step6b_oto"
+        "step6b_oto",
+        "step6macse",
+        "step6macse_oto"
 ]
 
 parser = argparse.ArgumentParser( formatter_class = argparse.RawDescriptionHelpFormatter, 
