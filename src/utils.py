@@ -94,7 +94,7 @@ def fas_to_dic(file):
                 i -= 1
                 break
 
-        values.append("".join(JustOneValue).upper())
+        values.append("".join(JustOneValue).upper().replace(" ", ""))
         
     return dict(zip(keys, values))
 
