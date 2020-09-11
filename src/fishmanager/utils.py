@@ -1,3 +1,4 @@
+import sys
 
 def checkstep(step, step_choices):
     
