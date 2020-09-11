@@ -79,7 +79,7 @@ add.add_argument('step',
                  help    = 'Step or directory [Default = "None"]')
 add.add_argument('-d', '--isdir',
                 action= "store_true",
-                help    = '[Optional] If selected, a directory is deleted')
+                help    = '[Optional] If selected, a directory is added')
 add.add_argument('-p', '--path',
                     metavar = "",
                     type    = str,
@@ -143,7 +143,24 @@ merge.add_argument('-p','--path',
 
 
 # create
-touch = subparsers.add_parser('create', help = "create metadata from directories")
+touch = subparsers.add_parser('create',
+                              help = "create metadata from directories or files",
+                              formatter_class = argparse.RawDescriptionHelpFormatter, 
+                              description="""
+
+Examples:
+    * Crate metadata from filenames
+
+        $ fishmanager create [files]
+
+    * Crate metadata from directories
+
+        $ fishmanager create [directories] -d
+
+                              """)
+touch.add_argument('-d', '--isdir',
+                    action= "store_true",
+                    help    = '[Optional] If selected, directories names are used to create metadata')
 touch.add_argument('-p','--path',
                     metavar="",
                     default= ".",
@@ -223,11 +240,13 @@ def main():
         
     elif wholeargs.subcommand == "create":
         import fishmanager.touch as touch
-
+        # print(wholeargs)
+        # print(wholeargs.isdir)
         touch.main(
             path = wholeargs.path,
             pattern = wholeargs.pattern,
-            counter_pattern = wholeargs.counter_pattern
+            counter_pattern = wholeargs.counter_pattern,
+            isdir = wholeargs.isdir
         )
         
 if __name__ == "__main__":
