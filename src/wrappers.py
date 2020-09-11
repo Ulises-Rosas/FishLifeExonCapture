@@ -12,7 +12,9 @@ import fishlifedat
 import fishlifesubmo
 
 from fishlifeexoncapture.fileHandler import TollCheck
-from fishlifeexoncapture.utils import runShell, addpath, getdict, check_reqs, countheaders, forcemove
+from fishlifeexoncapture.utils import (runShell, addpath,
+                                       getdict, check_reqs, 
+                                       countheaders, forcemove)
 
 class Trimmomatic:
     def __init__(self,
@@ -1160,8 +1162,10 @@ class preAln:
 class macse:
     def __init__(self,
                  tc_class  = None,
+                 suffix    = ".unaligned.fasta",
                  homovalue = 0.4,
                  otophysi  = False,
+                 memory    = 2000,
                  threads   = None,
                  keep      = False):
         """
@@ -1205,6 +1209,7 @@ class macse:
         self.otophysi = otophysi
         self.threads  = threads
         self.keep     = keep
+        self.suffix   = suffix
         
         self.mitopatt  = "(^ND.+|^CO.+|^CY.+|^AT.+)"
         
@@ -1212,15 +1217,15 @@ class macse:
         self.path      = self.tc_class.path
         self.corenames = self.tc_class.pickleIt
         self.step      = self.tc_class.step
+        # -Xmx%sM
         self.cmd       = """
-        java -jar  {jar_compiled}\
-             -prog {program}\
-             -seq  {seq}\
-             {homo}\
-             -out_NT {NT}\
-             -out_AA {AA}\
-             {gc_def}
-             """
+        java -Xmx%sM -jar    {jar_compiled}\
+                     -prog   {program}\
+                     -seq    {seq}\
+                     {homo}\
+                     -out_NT {NT}\
+                     -out_AA {AA}\
+                     {gc_def}""" % memory
     @property
     def jar_comp(self):
         import fishlifesubmo
@@ -1259,24 +1264,24 @@ class macse:
         runShell(
             self.cmd.format(
                 jar_compiled = self.jar_comp,
-                program = "trimNonHomologousFragments",
-                seq = completecore + ".unaligned.fasta",
-                homo = "-min_homology_to_keep_seq %s" % self.homovalue,
-                NT = trimnt_out,
-                AA = trimaa_out,
-                gc_def = "" if not is_mito else "-gc_def %s" % self.gc_def
+                program      = "trimNonHomologousFragments",
+                seq          = completecore + self.suffix,
+                homo         = "-min_homology_to_keep_seq %s" % self.homovalue,
+                NT           = trimnt_out,
+                AA           = trimaa_out,
+                gc_def       = "" if not is_mito else "-gc_def %s" % self.gc_def
             ).strip().split()
         )
             
         runShell(
             self.cmd.format(
                 jar_compiled = self.jar_comp,
-                program = "alignSequences",
-                seq = trimnt_out,
-                homo = "",
-                NT = alnnt_out,
-                AA = alnaa_out,
-                gc_def = "" if not is_mito else "-gc_def %s" % self.gc_def
+                program      = "alignSequences",
+                seq          = trimnt_out,
+                homo         = "",
+                NT           = alnnt_out,
+                AA           = alnaa_out,
+                gc_def       = "" if not is_mito else "-gc_def %s" % self.gc_def
             ).strip().split()
         )
         
