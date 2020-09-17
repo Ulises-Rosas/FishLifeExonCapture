@@ -32,7 +32,7 @@ The directory `Family_Genus_species_S1234` is created storing above files with:
 fishmanager mkdir
 ```
 
-Note that your working directory may contain more than two files
+Note that your working directory may contain more than two files. Check a progress report with: `fishmanager look`.
 
 ### Step 1: Run Trimmomatic to quality trim the sequences
 ```
@@ -130,3 +130,6 @@ alternative for the otophysan markers:
 preAlignmentFlanks_Otophysi -n [number of cpus]
 ```
 
+### Fishmanager
+
+This is a submodule that allows to look/modify metadata. If the metadata is split into a given number of branches (with `fishmanager split`), each branch can be run in parallel (i.e. submitting multiples job files) with the option `-b` available in almost all commands. This multibatch approach speeds up analyses
