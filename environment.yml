@@ -1,4 +1,4 @@
-name: FishLifeExonCapture
+name: flec
 channels:
   - bioconda
   - defaults
@@ -8,12 +8,13 @@ dependencies:
   - pip
   - trimmomatic
   - bwa
-  - samtools
+  - samtools ==1.9
   - velvet
   - blast
   - trinity
   - exonerate
   - cd-hit
+  - java-jdk
   - pip:
     - git+https://github.com/Ulises-Rosas/aTRAM.git#egg=atram[complete]
     - git+https://github.com/Ulises-Rosas/FishLifeExonCapture.git#egg=fishlifeexoncapture
