@@ -1232,8 +1232,8 @@ class macse:
         
         return ospj(
                     fishlifesubmo.__path__[0],
-                    "MACSE_V2_PIPELINES",
-                    "UTILS",
+                    # "MACSE_V2_PIPELINES",
+                    # "UTILS",
                     "macse_v2.03.jar"
                     )
     @property

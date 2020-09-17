@@ -26,7 +26,7 @@ fishlifefiles = [
                 ]
 
 fishlifesubmo = [
-                "MACSE_V2_PIPELINES/UTILS/macse_v2.03.jar"
+                "./submodules/macse_v2.03.jar"
                 ]
     
 setup(
