@@ -17,7 +17,7 @@ conda activate flec
 
 # Commands available
 
-Each command has its own helping page if more information about available options is needed. All commands assume your are working in a same working directory (i.e. directory with your fastq files are initially located), but this can also be modified (see option '-p' on each command).  Everything between brackets (`[]`) should be fullfiled by the user accordingly
+Each command has its own helping page (either with `-h` or `--help`) if more information about available options is needed. All commands assume your are working in a same working directory (i.e. directory with your fastq files are initially located), but this can also be modified (see option '-p' on each command).  Everything between brackets (`[]`) should be fullfiled by the user accordingly
 
 
 ### Step 0: Pack fastq files into directories
