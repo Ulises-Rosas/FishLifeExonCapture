@@ -1232,7 +1232,7 @@ class macse:
         
         return ospj(
                     fishlifesubmo.__path__[0],
-                    # "MACSE_V2_PIPELINES",
+                    "submodules",
                     # "UTILS",
                     "macse_v2.03.jar"
                     )
@@ -1289,6 +1289,9 @@ class macse:
             try:
                 os.remove(completecore + ".unaligned_stats.csv")
                 os.remove(completecore + ".unaligned_mask_detail_NT.fasta")
+                os.remove(completecore + ".unaligned.NT_trimNonHomologousFragments.fasta")
+                os.remove(completecore + ".unaligned.AA_trimNonHomologousFragments.fasta")
+
             except FileNotFoundError:
                 pass
             
