@@ -151,11 +151,11 @@ touch = subparsers.add_parser('create',
 Examples:
     * Crate metadata from filenames
 
-        $ fishmanager create [files]
+        $ fishmanager create -i "[files pattern]"
 
     * Crate metadata from directories
 
-        $ fishmanager create [directories] -d
+        $ fishmanager create -i "[directories pattern]" -d
 
                               """)
 touch.add_argument('-d', '--isdir',
