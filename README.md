@@ -12,7 +12,7 @@ For more information check the following repo: [FishLifeExonCapture](https://git
 ```shell
 git clone https://github.com/Ulises-Rosas/FishLifeExonCapture.git && cd FishLifeExonCapture 
 conda env create -f environment.yml
-conda activate flec  
+source activate flec  
 ```
 
 # Commands available
