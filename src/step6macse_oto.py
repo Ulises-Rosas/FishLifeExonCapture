@@ -21,18 +21,22 @@ def getOpts():
 Example:
       * Common usage with five threads:
 
-        $ run_macse_Otophysi -n 5
+        $ run_macse -n 5
 
       * Specifying memory usage in GB:
 
-        $ run_macse_Otophysi -s '' -n 5 -M 15
-
-        note: Memory is reparted among threads, i.e., each
-              thread will recieve 3GB of memory
+        $ run_macse -n 5 -M 15
 
       * Specifying file suffix:
 
-        $ run_macse_Otophysi -s '' -n 5  
+        $ run_macse -s '' -n 5
+        
+        Note: By default, the pipeline always
+              assumes there is a suffix (i.e. longer names
+              than showed at `fishmanager look`), then
+              this `-s` option skip that part. This is useful
+              when added files are not part of
+              pipeline products.
 
                                       ''')
     parser.add_argument('-p', '--path',
@@ -52,7 +56,7 @@ Example:
                         help    = '[Optional] Min. homology to keep for macse\'s "trimNonHomologousFragments" program [Default = %s]' % HOMOVAL)
     parser.add_argument('-M', '--memory',
                         metavar = "",
-                        type    = int,
+                        type    = float,
                         default = DEFAULT_MEM,
                         help    = '[Optional] Memory usage in GBs [Default = %s]' % DEFAULT_MEM)
     parser.add_argument('-n', '--threads',

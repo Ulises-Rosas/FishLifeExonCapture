@@ -67,6 +67,7 @@ setup(
             'run_macse_Otophysi           = fishlifeexoncapture.step6macse_oto:main'
             ]
     },
+    # zip_safe = False,
     install_requires = dependencies,
     classifiers = [
         'Programming Language :: Python :: 3'
