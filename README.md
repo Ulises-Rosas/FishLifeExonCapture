@@ -1,6 +1,6 @@
 # FishLifeExonCapture
 
-For more information check the following repo: [FishLifeExonCapture](https://github.com/lilychughes/FishLifeExonCapture). This is just an easy-install initiative.
+For more information check the following repo: [FishLifeExonCapture](https://github.com/lilychughes/FishLifeExonCapture). This is just a python version and easy-install initiative of the original repo
 
 ### Requirement:
 
