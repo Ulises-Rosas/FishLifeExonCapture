@@ -109,14 +109,13 @@ preAlignment_Otophysi -n [number of cpus]
 To run MACSE2:
 
 ```
-cd Alignments/
-run_macse -n [number of cpus] -M [memory in GB]
+run_macse -n [number of cpus] -p Alignments
 ```
-
+Where `Alignments` is the directory previously created by the `preAlignment` command. 
 As with the last step, there is an alternative script for the otophysan markers:
 ```
 cd Alignments
-run_macse_Otophysi -n [number of cpus] -M [memory in GB]
+run_macse_Otophysi -n [number of cpus] -p Alignments
 ```
 
 ### Step 6b: Alignment for contigs with flanking regions
