@@ -114,7 +114,6 @@ run_macse -n [number of cpus] -p Alignments
 Where `Alignments` is the directory previously created by the `preAlignment` command. 
 As with the last step, there is an alternative script for the otophysan markers:
 ```
-cd Alignments
 run_macse_Otophysi -n [number of cpus] -p Alignments
 ```
 
