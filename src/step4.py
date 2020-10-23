@@ -36,8 +36,8 @@ def getOpts():
                         choices= ["velvet", "trinity"],
                         metavar = "",
                         type    = str,
-                        default = "velvet",
-                        help    = '[Optional] Assambler [Default = "velvet"]')
+                        default = "trinity",
+                        help    = '[Optional] Assambler [Default = "trinity"]')
     parser.add_argument('-i', '--iterations',
                         metavar = "",
                         type    = int,
